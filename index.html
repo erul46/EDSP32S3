@@ -614,44 +614,163 @@ function renderEq(){
     const v=+pgs.value; document.getElementById('peqGainVal').textContent=(v>0?'+':'')+v.toFixed(1)+' dB';
     peqLive(); drawEqBars(v);   // bar band aktif ikut gerak, alat ikut berubah saat digeser
   });
-  qs.addEventListener('input', ()=>{ document.getElementById('peqQVal').textContent = (+qs.value).toFixed(1); peqLive(); });
+  qs.addEventListener('input', ()=>{ document.getElementById('peqQVal').textContent = (+qs.value).toFixed(1); peqLive(); drawEqBars(); });
   function sendPeq(){
     sendCmd(CMD.SET_PEQ, peqPayload());
     drawEqBars();
   }
   fs.addEventListener('change', sendPeq); pgs.addEventListener('change', sendPeq); qs.addEventListener('change', sendPeq);
 }
-function drawEqBars(liveGainOverride){
-  const cv=document.getElementById('eqCanvas'); if(!cv) return;
-  const ctx=cv.getContext('2d'); const W=cv.width, H=cv.height;
-  const padTop=14, padBot=22, gap=6;
-  const n=9, barW=(W-gap*(n+1))/n;
-  const midY = padTop + (H-padTop-padBot)/2;
-  ctx.clearRect(0,0,W,H);
+/* ---------- GRAFIK BENANG (CONTINUOUS RESPONSE CURVE) ---------- */
+function calcBiquadPeakDb(f0, gainDb, Q, f, fs = 48000) {
+  if (Math.abs(gainDb) < 0.05) return 0;
+  const A = Math.pow(10, gainDb / 40);
+  const w0 = 2 * Math.PI * f0 / fs;
+  const alpha = Math.sin(w0) / (2 * Q);
+  const cos_w0 = Math.cos(w0);
 
-  // grid: garis 0dB tengah + guide +12/-12
-  ctx.strokeStyle='rgba(60,90,120,0.3)'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(0,padTop); ctx.lineTo(W,padTop); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(0,H-padBot); ctx.lineTo(W,H-padBot); ctx.stroke();
-  ctx.strokeStyle='rgba(220,230,240,0.35)';
-  ctx.beginPath(); ctx.moveTo(0,midY); ctx.lineTo(W,midY); ctx.stroke();
+  const b0 = 1 + alpha * A;
+  const b1 = -2 * cos_w0;
+  const b2 = 1 - alpha * A;
+  const a0 = 1 + alpha / A;
+  const a1 = -2 * cos_w0;
+  const a2 = 1 - alpha / A;
 
-  for(let b=0;b<9;b++){
-    const gainDb = (b===activeBand && liveGainOverride!==undefined) ? liveGainOverride : state.peqGain[activeCh][b]/10;
-    const half = (H-padTop-padBot)/2;
-    const barH = Math.min(half, Math.abs(gainDb)/12*half);
-    const x = gap + b*(barW+gap);
-    const y = gainDb >= 0 ? midY - barH : midY;
-    const isActive = (b===activeBand);
-    ctx.fillStyle = isActive ? '#3ec9e8' : 'rgba(62,232,154,0.55)';
-    ctx.fillRect(x, y, barW, Math.max(1,barH));
-    // label frekuensi tiap band di bawah grafik
-    const fLbl = FREQ_ISO[state.peqFreqIdx[activeCh][b]];
-    const txt = fLbl>=1000 ? (fLbl/1000)+'k' : ''+fLbl;
-    ctx.fillStyle = isActive ? '#3ec9e8' : '#5c7690';
-    ctx.font = '9px monospace';
+  const w = 2 * Math.PI * f / fs;
+  const cw = Math.cos(w), sw = Math.sin(w);
+  const c2w = Math.cos(2 * w), s2w = Math.sin(2 * w);
+
+  const nr = b0 / a0 + (b1 / a0) * cw + (b2 / a0) * c2w;
+  const ni = -(b1 / a0) * sw - (b2 / a0) * s2w;
+  const dr = 1 + (a1 / a0) * cw + (a2 / a0) * c2w;
+  const di = -(a1 / a0) * sw - (a2 / a0) * s2w;
+
+  const mag_sq = (nr * nr + ni * ni) / (dr * dr + di * di + 1e-20);
+  return 10 * Math.log10(Math.max(mag_sq, 1e-20));
+}
+
+function drawEqBars(liveGainOverride) {
+  const cv = document.getElementById('eqCanvas'); if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const padTop = 14, padBot = 22, padLeft = 10, padRight = 10;
+  const plotW = W - padLeft - padRight;
+  const plotH = H - padTop - padBot;
+  const midY = padTop + plotH / 2;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Background Grid dB (-12, -6, 0, +6, +12 dB)
+  const dBs = [12, 6, 0, -6, -12];
+  dBs.forEach(db => {
+    const y = midY - (db / 12) * (plotH / 2);
+    ctx.strokeStyle = (db === 0) ? 'rgba(220,230,240,0.35)' : 'rgba(60,90,120,0.2)';
+    ctx.lineWidth = (db === 0) ? 1.5 : 1;
+    ctx.beginPath(); ctx.moveTo(padLeft, y); ctx.lineTo(W - padRight, y); ctx.stroke();
+    
+    ctx.fillStyle = '#5c7690'; ctx.font = '9px monospace'; ctx.textAlign = 'left';
+    if (db !== 0) ctx.fillText((db > 0 ? '+' : '') + db + 'dB', padLeft + 2, y - 2);
+  });
+
+  // Vertical Grid Frekuensi Logaritmik (20Hz - 20kHz)
+  const fMarks = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000];
+  const lMin = Math.log10(20), lMax = Math.log10(20000);
+  fMarks.forEach(f => {
+    const x = padLeft + ((Math.log10(f) - lMin) / (lMax - lMin)) * plotW;
+    ctx.strokeStyle = 'rgba(60,90,120,0.18)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, padTop); ctx.lineTo(x, H - padBot); ctx.stroke();
+    
+    const txt = f >= 1000 ? (f / 1000) + 'k' : '' + f;
+    ctx.fillStyle = '#5c7690'; ctx.font = '9px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(txt, x, H - 6);
+  });
+
+  // Kumpulkan data 9 Band untuk Channel Aktif
+  const bands = [];
+  for (let b = 0; b < 9; b++) {
+    const f = FREQ_ISO[state.peqFreqIdx[activeCh][b]];
+    const g = (b === activeBand && liveGainOverride !== undefined) 
+              ? liveGainOverride 
+              : state.peqGain[activeCh][b] / 10;
+    const q = state.peqQ[activeCh][b] / 10;
+    bands.push({ freq: f, gain: g, q: q });
+  }
+
+  // Gambar Area Bayangan Transparan di Bawah Kurva
+  ctx.beginPath();
+  ctx.moveTo(padLeft, midY);
+  for (let px = 0; px <= plotW; px += 2) {
+    const f = Math.pow(10, lMin + (px / plotW) * (lMax - lMin));
+    let totalDb = 0;
+    for (let b = 0; b < 9; b++) {
+      totalDb += calcBiquadPeakDb(bands[b].freq, bands[b].gain, bands[b].q, f);
+    }
+    const py = midY - (totalDb / 12) * (plotH / 2);
+    ctx.lineTo(padLeft + px, Math.max(padTop, Math.min(H - padBot, py)));
+  }
+  ctx.lineTo(W - padRight, midY);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(62, 201, 232, 0.12)';
+  ctx.fill();
+
+  // Gambar "GRAFIK BENANG" (Garis Kurva Bersinar / Glow)
+  ctx.beginPath();
+  ctx.strokeStyle = '#3ec9e8';
+  ctx.lineWidth = 2.5;
+  ctx.shadowColor = '#3ec9e8';
+  ctx.shadowBlur = 8;
+
+  for (let px = 0; px <= plotW; px += 2) {
+    const f = Math.pow(10, lMin + (px / plotW) * (lMax - lMin));
+    let totalDb = 0;
+    for (let b = 0; b < 9; b++) {
+      totalDb += calcBiquadPeakDb(bands[b].freq, bands[b].gain, bands[b].q, f);
+    }
+    const py = midY - (totalDb / 12) * (plotH / 2);
+    const clampedY = Math.max(padTop, Math.min(H - padBot, py));
+    if (px === 0) ctx.moveTo(padLeft + px, clampedY);
+    else ctx.lineTo(padLeft + px, clampedY);
+  }
+  ctx.stroke();
+  ctx.shadowBlur = 0; // Matikan shadow untuk elemen lain
+
+  // Gambar Titik Penanda (Node Dots) untuk Masing-masing 9 Band
+  for (let b = 0; b < 9; b++) {
+    const f = bands[b].freq;
+    const x = padLeft + ((Math.log10(f) - lMin) / (lMax - lMin)) * plotW;
+    
+    // Hitung posisi Y kurva tepat di frekuensi band tersebut
+    let totalDb = 0;
+    for (let k = 0; k < 9; k++) {
+      totalDb += calcBiquadPeakDb(bands[k].freq, bands[k].gain, bands[k].q, f);
+    }
+    const y = Math.max(padTop + 2, Math.min(H - padBot - 2, midY - (totalDb / 12) * (plotH / 2)));
+    const isActive = (b === activeBand);
+
+    // Titik lingkaran luar (Halo) jika band sedang dipilih
+    if (isActive) {
+      ctx.beginPath();
+      ctx.arc(x, y, 7, 0, Math.PI * 2);
+      ctx.strokeStyle = '#ffc94a';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // Titik inti
+    ctx.beginPath();
+    ctx.arc(x, y, isActive ? 4.5 : 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = isActive ? '#ffc94a' : '#3ee89a';
+    ctx.fill();
+    ctx.strokeStyle = '#080b12';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Nomor band di atas/bawah titik
+    ctx.fillStyle = isActive ? '#ffc94a' : '#5c7690';
+    ctx.font = 'bold 9px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(txt, x+barW/2, H-6);
+    const labelY = (totalDb >= 0) ? y - 9 : y + 14;
+    ctx.fillText(b + 1, x, Math.max(padTop + 8, Math.min(H - padBot + 1, labelY)));
   }
 }
 
