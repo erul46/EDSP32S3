@@ -1,7 +1,7 @@
 {
-  "name": "DLMS Mini 240 Control",
-  "short_name": "DLMS 240",
-  "description": "Kontrol Bluetooth untuk DLMS Mini 240 — 4-channel audio DSP",
+  "name": " ELKASARI DSP MANAGER",
+  "short_name": "EDSP",
+  "description": "Kontrol Bluetooth untuk ELKASARI DSP 2_IN 4_OUT",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -10,25 +10,25 @@
   "theme_color": "#0a0e17",
   "icons": [
     {
-      "src": "dlms240-192.png",
+      "src": "Edsp-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "dlms240-512.png",
+      "src": "Edsp-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "dlms240-maskable-192.png",
+      "src": "Edsp-maskable-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "dlms240-maskable-512.png",
+      "src": "Edsp-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
