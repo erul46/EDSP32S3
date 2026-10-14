@@ -2,183 +2,717 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>DLMS Mini 240 — Control</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>ELKASARI DSP 2_IN 4_OUT</title>
 <link rel="manifest" href="./manifest.json">
-<meta name="theme-color" content="#0b0d0f">
+<meta name="theme-color" content="#0b0c10">
 <link rel="icon" href="./dlms240-192.png">
 <link rel="apple-touch-icon" href="./dlms240-192.png">
+
+<!-- CDN Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
 <style>
-  :root{
-    --bg:#080b12;
-    --panel:#0e131f;
-    --panel2:#131a29;
-    --card:#111827;
-    --line:#1e2c42;
-    --cyan:#3ec9e8;
-    --cyan-dim:#1c5a6e;
-    --mint:#3ee89a;
-    --amber:#ffc94a;
-    --red:#ff5c7a;
-    --text:#dbe7f2;
-    --textdim:#5c7690;
-    --mono: 'Courier New', 'DM Mono', Consolas, monospace;
+  :root {
+    --bg: #0b0c10;
+    --panel: #11151f;
+    --panel2: #141923;
+    --card: #0f141d;
+    --line: #1e293b;
+    --line-light: #2c3a50;
+    --cyan: #00e5ff;
+    --cyan-dim: #007c8a;
+    --cyan-glow: rgba(0, 229, 255, 0.35);
+    --mint: #3ee89a;
+    --amber: #ffc94a;
+    --red: #ff3366;
+    --text: #f1f5f9;
+    --textdim: #708499;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0; padding:0; background:var(--bg); color:var(--text);
-    font-family:var(--mono); text-transform:uppercase; letter-spacing:.03em;
-    overscroll-behavior:none; user-select:none;}
-  #app{max-width:520px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column;}
 
-  /* ---------- TOP BAR ---------- */
-  header{padding:12px 14px 10px; border-bottom:1px solid var(--line); background:linear-gradient(180deg,#0d1220,#080b12);}
-  .brandrow{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
-  .brand{display:flex; flex-direction:column; line-height:1.1;}
-  .brand b{font-size:14px; letter-spacing:.14em; color:var(--cyan); font-weight:700;}
-  .brand span{font-size:9px; letter-spacing:.16em; color:var(--textdim); margin-top:2px;}
-  .connbtn{display:flex; align-items:center; gap:6px; background:var(--panel2); border:1px solid var(--line);
-    padding:7px 12px; border-radius:20px; font-size:10px; font-weight:600; letter-spacing:.05em; color:var(--textdim);}
-  .connbtn.on{color:var(--mint); border-color:#1c5a3e;}
-  .dot{width:6px; height:6px; border-radius:50%; background:var(--textdim);}
-  .connbtn.on .dot{background:var(--mint); box-shadow:0 0 6px var(--mint);}
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-  .presetbar{display:flex; align-items:center; gap:8px;}
-  .presetbar select{flex:1; background:var(--panel2); border:1px solid var(--line); color:var(--cyan);
-    font-family:var(--mono); font-size:11px; font-weight:700; padding:8px 10px; border-radius:8px; text-transform:uppercase;}
-  .presetbar button{background:var(--panel2); border:1px solid var(--line); color:var(--textdim); font-size:10px;
-    font-weight:700; font-family:var(--mono); padding:8px 12px; border-radius:8px;}
-  .presetbar button.go{color:#08121a; background:var(--cyan); border-color:var(--cyan);}
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    overscroll-behavior: none;
+    user-select: none;
+    height: 100%;
+    overflow: hidden;
+  }
 
-  /* ---------- OVERVIEW: INPUT/OUTPUT CARDS (selalu keliatan) ---------- */
-  .overview{padding:12px 14px 4px;}
-  .ovlabel{font-size:10px; letter-spacing:.14em; color:var(--textdim); font-weight:700; margin:2px 0 6px;}
-  .cardgrid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;}
-  .iocard{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 11px; position:relative;}
-  .iocard.selected{border-color:var(--cyan-dim); box-shadow:0 0 0 1px var(--cyan-dim) inset;}
-  .iocard .nm{font-size:11px; font-weight:700; color:var(--text); margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .iocard .badges{display:flex; gap:4px; margin-bottom:7px;}
-  .badge{font-size:8px; font-weight:700; padding:3px 6px; border-radius:5px; background:#1a2233; color:var(--textdim); letter-spacing:.04em;}
-  .badge.lim-on{background:#3a2a10; color:var(--amber);}
-  .badge.mute-on{background:#3a1420; color:var(--red);}
-  .iocard .gainval{font-size:13px; font-weight:700; color:var(--cyan); margin-bottom:6px;}
-  .miniBarWrap{height:4px; background:#060a12; border-radius:2px; overflow:hidden;}
-  .miniBar{height:100%; width:4%; border-radius:2px; background:linear-gradient(90deg, var(--mint), var(--amber) 75%, var(--red) 94%); transition:width .12s linear;}
+  #app {
+    max-width: 520px;
+    margin: 0 auto;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: var(--bg);
+    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+  }
 
-  /* ---------- TABS ---------- */
-  nav{display:flex; overflow-x:auto; gap:2px; padding:8px 10px; background:var(--bg);
-    border-bottom:1px solid var(--line); -ms-overflow-style:none; scrollbar-width:none;}
-  nav::-webkit-scrollbar{display:none;}
-  nav button{flex:0 0 auto; background:none; border:none; color:var(--textdim); font-size:11px; font-family:var(--mono);
-    font-weight:700; letter-spacing:.08em; padding:9px 13px; border-radius:8px; white-space:nowrap;}
-  nav button.active{color:var(--bg); background:var(--cyan);}
+  /* KUNCI GESTUR AGAR LAYAR TIDAK SCROLL SAAT GESER SLIDER */
+  input[type=range], 
+  input.vslider, 
+  .fadertrack,
+  #eqCanvas,
+  #compCanvas {
+    touch-action: none;
+  }
 
-  main{flex:1; padding:14px 14px 90px;}
-  .panel{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:14px;}
-  .panel h3{margin:0 0 12px; font-size:11px; letter-spacing:.14em; color:var(--mint); font-weight:700; text-transform:uppercase;}
+  /* ---------- TOP BAR / HEADER ---------- */
+  header {
+    flex-shrink: 0;
+    padding: 10px 14px 8px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #141923 0%, #0b0c10 100%);
+  }
+  .brandrow { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+/* Styling Logo Gambar di Header */
+  .brand {
+    display: flex;
+    align-items: center;
+  }
 
-  .chsel{display:flex; gap:6px; margin-bottom:14px;}
-  .chsel button{flex:1; padding:10px 0; background:var(--panel2); border:1px solid var(--line); border-radius:9px;
-    color:var(--textdim); font-size:12px; font-weight:700; font-family:var(--mono);}
-  .chsel button.active{background:#0e2c36; border-color:var(--cyan-dim); color:var(--cyan);}
+  .brand-logo {
+    height: 52px;              /* Tinggi proporsional di layar HP */
+    max-width: 220px;          /* Batas lebar agar tidak mendesak tombol CONNECT */
+    width: auto;
+    object-fit: contain;
+    display: block;
+    /* Pendaran cahaya (glow) halus pada logo agar menyala di tema gelap */
+    filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.35));
+  }
+  .connbtn {
+    display: flex; align-items: center; gap: 6px; background: var(--panel2);
+    border: 1px solid var(--line); padding: 6px 12px; border-radius: 20px;
+    font-size: 10px; font-weight: 700; letter-spacing: .06em; color: var(--textdim);
+    transition: all .2s ease;
+  }
+  .connbtn.on { color: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 10px var(--cyan-glow); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--textdim); }
+  .connbtn.on .dot { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
 
-  .row{display:flex; align-items:center; justify-content:space-between; padding:11px 2px; border-bottom:1px solid var(--line);}
-  .row:last-child{border-bottom:none;}
-  .row .lbl{font-size:12px; color:var(--text); font-weight:500;}
-  .val{font-family:var(--mono); font-size:14px; color:var(--amber); font-weight:600; min-width:56px; text-align:right;}
+  .presetbar { display: flex; align-items: center; gap: 6px; }
+  .presetbar select {
+    flex: 1; 
+    appearance: none;
+    -webkit-appearance: none;
+    background: linear-gradient(180deg, #141b27 0%, #0a0e16 100%); 
+    border: 1px solid #1c2738;
+    color: var(--cyan); 
+    font-family: var(--mono); 
+    font-size: 11px; 
+    font-weight: 800;
+    padding: 8px 30px 8px 10px; 
+    border-radius: 6px; 
+    text-transform: uppercase; 
+    outline: none;
+    cursor: pointer;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.4);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2300e5ff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+  }
+  .presetbar select option {
+    background: #0c121d;
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 10px;
+  }
+  .presetbar button {
+    background: linear-gradient(180deg, #182232 0%, #0c121d 100%);
+    border: 1px solid #202d42; 
+    color: #8da2b5;
+    font-size: 10px; 
+    font-weight: 800; 
+    font-family: var(--mono); 
+    padding: 8px 13px;
+    border-radius: 6px; 
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08);
+    transition: all .12s ease;
+  }
+  .presetbar button:active {
+    transform: translateY(1px);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
+  }
+  .presetbar button.go {
+    background: linear-gradient(180deg, #00e5ff 0%, #009cb8 100%);
+    color: #03070d; 
+    border-color: #00e5ff; 
+    font-weight: 900;
+    box-shadow: 0 0 10px var(--cyan-glow), inset 0 1px 0 rgba(255,255,255,0.4);
+    text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+  }
 
-  .sliderow{padding:10px 2px 14px;}
-  .sliderow .top{display:flex; justify-content:space-between; margin-bottom:8px;}
-  input[type=range]{-webkit-appearance:none; width:100%; height:4px; border-radius:2px; background:var(--line); outline:none;}
-  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:20px; height:20px; border-radius:50%;
-    background:var(--cyan); border:3px solid #0a0e17; box-shadow:0 0 8px var(--cyan-dim);}
+  /* ---------- MAIN WORKSPACE (SCROLLABLE) ---------- */
+  #main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 12px 115px;
+    -webkit-overflow-scrolling: touch;
+  }
+  #main::-webkit-scrollbar { width: 4px; }
+  #main::-webkit-scrollbar-thumb { background: var(--line-light); border-radius: 2px; }
 
-  /* ---------- FADER VERTIKAL (gaya channel strip mixer: Gain/HPF/LPF) ---------- */
-  .faderstrip{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:6px 0 4px;}
-  .fadercol{display:flex; flex-direction:column; align-items:center;}
-  .fadercol .flabel{font-size:9px; letter-spacing:.1em; color:var(--mint); font-weight:700; margin-bottom:6px;}
-  .fadercol .fval{font-size:12px; color:var(--amber); font-weight:700; margin-top:8px;}
-  .fadertrack{position:relative; width:36px; height:170px; background:#060a12; border:1px solid var(--line);
-    border-radius:8px; display:flex; justify-content:center;}
-  .fadertrack::before{content:''; position:absolute; top:8px; bottom:8px; width:2px; background:var(--line);}
-  input.vslider{-webkit-appearance:none; appearance:none; writing-mode:vertical-lr; direction:rtl;
-    width:28px; height:158px; background:transparent; outline:none; margin:0; z-index:1;}
-  input.vslider::-webkit-slider-runnable-track{width:4px; background:transparent;}
-  input.vslider::-webkit-slider-thumb{-webkit-appearance:none; width:30px; height:16px; border-radius:4px;
-    background:var(--cyan); border:2px solid #0a0e17; box-shadow:0 0 8px var(--cyan-dim); cursor:pointer;}
-  input.vslider::-moz-range-thumb{width:30px; height:16px; border-radius:4px; background:var(--cyan);
-    border:2px solid #0a0e17; box-shadow:0 0 8px var(--cyan-dim); cursor:pointer;}
-  input.vslider::-moz-range-track{width:4px; background:var(--line);}
+  /* ---------- OVERVIEW METER BRIDGE (IKUT TENGGELAM SAAT SCROLL) ---------- */
+  .overview { 
+    padding: 2px 2px 10px; 
+    margin-bottom: 8px; 
+    border-bottom: 1px solid rgba(30, 41, 59, 0.6); 
+  }
+  .ovlabel { 
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 8.5px; 
+    letter-spacing: .14em; 
+    color: var(--textdim); 
+    font-weight: 800; 
+    margin: 6px 0 5px; 
+  }
+  .ovlabel::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(30, 41, 59, 0.8), transparent);
+  }
 
-  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
-  .toggle{padding:12px 6px; border-radius:9px; background:var(--panel2); border:1px solid var(--line);
-    text-align:center; font-size:12px; font-weight:700; color:var(--textdim); font-family:var(--mono);}
-  .toggle.mute-on{background:#3a1420; border-color:#5c2338; color:var(--red);}
-  .toggle.route-on{background:#0e2c22; border-color:#1c5a3e; color:var(--mint);}
+  .cardgrid.inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 4px; }
+  .cardgrid.outputs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 6px; }
 
-  .bandrow{display:grid; grid-template-columns:repeat(9,1fr); gap:4px; margin-bottom:14px;}
-  .bandrow button{aspect-ratio:1; border-radius:7px; background:var(--panel2); border:1px solid var(--line);
-    color:var(--textdim); font-family:var(--mono); font-size:11px; font-weight:700;}
-  .bandrow button.active{background:var(--cyan); color:#08121a; border-color:var(--cyan);}
+  .iocard {
+    background: linear-gradient(180deg, #141b27 0%, #0b0f17 100%);
+    border: 1px solid #1c2638;
+    border-radius: 6px;
+    padding: 6px 6px 7px;
+    position: relative;
+    cursor: pointer;
+    transition: all .15s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .iocard.selected {
+    border-color: var(--cyan);
+    background: linear-gradient(180deg, #172738 0%, #0b141f 100%);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.35), inset 0 0 6px rgba(0, 229, 255, 0.15);
+  }
+  .iocard.selected::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 15%; right: 15%;
+    height: 2px;
+    background: var(--cyan);
+    box-shadow: 0 0 6px var(--cyan);
+    border-radius: 0 0 2px 2px;
+  }
+  .iocard .nm { 
+    font-size: 9px; 
+    font-weight: 800; 
+    letter-spacing: .06em;
+    color: #94a3b8; 
+    margin-bottom: 4px; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+  }
+  .iocard.selected .nm {
+    color: var(--cyan);
+    text-shadow: 0 0 6px var(--cyan-glow);
+  }
+  .iocard .gainval { 
+    font-size: 11px; 
+    font-weight: 800; 
+    color: var(--amber); 
+    font-family: var(--mono);
+    margin-bottom: 4px; 
+    text-shadow: 0 0 6px rgba(255, 201, 74, 0.3);
+  }
+  .iocard .badges { display: flex; gap: 3px; margin-bottom: 5px; }
+  .badge { 
+    font-size: 7px; 
+    font-weight: 800; 
+    padding: 1.5px 3.5px; 
+    border-radius: 3px; 
+    background: #090e17; 
+    color: #3e5066; 
+    border: 1px solid #162233;
+    letter-spacing: .04em;
+    line-height: 1;
+  }
+  .badge.lim-on { 
+    background: rgba(255, 201, 74, 0.2); 
+    border-color: #ffc94a;
+    color: #ffc94a; 
+    box-shadow: 0 0 6px rgba(255, 201, 74, 0.6);
+  }
+  .badge.mute-on { 
+    background: rgba(255, 51, 102, 0.25); 
+    border-color: #ff3366;
+    color: #ff3366; 
+    box-shadow: 0 0 6px rgba(255, 51, 102, 0.7);
+  }
+  .miniBarWrap { 
+    height: 5px; 
+    background: #04070c; 
+    border: 1px solid #121c29;
+    border-radius: 2px; 
+    overflow: hidden; 
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.9);
+    padding: 0.5px;
+  }
+  .miniBar { 
+    height: 100%; 
+    width: 4%; 
+    border-radius: 1px; 
+    background: linear-gradient(90deg, #3ee89a 0%, #ffc94a 72%, #ff3366 92%); 
+    box-shadow: 0 0 6px rgba(62, 232, 154, 0.4);
+    transition: width .1s linear; 
+  }
 
-  .graphwrap{background:#060a12; border-radius:10px; border:1px solid var(--line); padding:10px;}
-  .legend{display:flex; gap:12px; justify-content:flex-end; margin-bottom:6px; flex-wrap:wrap;}
-  .legend span{font-size:9px; color:var(--textdim); display:flex; align-items:center; gap:4px;}
-  .legend i{width:8px; height:8px; border-radius:2px; display:inline-block;}
-  canvas{width:100%; display:block;}
-  .rtalabels{display:flex; gap:3px; margin-top:6px;}
-  .rtalabels span{flex:1; text-align:center; font-size:9px; color:var(--textdim); font-family:var(--mono); font-weight:700;}
+  /* ---------- TAB WINDOWS ---------- */
+  .tab-window { display: none; width: 100%; animation: fadeIn 0.15s ease-out; }
+  .tab-window.active { display: block; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 
-  /* ---------- COMPRESSOR PAGE ---------- */
-  .complayout{display:flex; gap:10px;}
-  .compgraph{flex:1; min-width:0;}
-  .grmeter{width:46px; display:flex; flex-direction:column; align-items:center; gap:4px;}
-  .grmeter .glabel{font-size:8px; color:var(--textdim); font-weight:700;}
-  .grbarwrap{width:16px; height:150px; background:#060a12; border-radius:6px; overflow:hidden; display:flex; align-items:flex-end; border:1px solid var(--line);}
-  .grbarfill{width:100%; background:linear-gradient(0deg, var(--mint), var(--amber) 60%, var(--red) 90%); height:6%; transition:height .12s linear;}
-  .grval{font-size:10px; color:var(--red); font-weight:700;}
-  .compactive{display:inline-block; font-size:9px; font-weight:700; padding:4px 10px; border-radius:20px; background:#0e2c22; color:var(--mint); float:right;}
-  .compactive.off{background:#1a2233; color:var(--textdim);}
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px; margin-bottom: 10px;
+  }
+  .panel h3 {
+    margin: 0 0 10px; font-size: 10.5px; letter-spacing: .12em; color: var(--mint);
+    font-weight: 700; text-transform: uppercase;
+  }
 
-  .jumprow{display:flex; gap:6px; overflow-x:auto; margin-top:12px; -ms-overflow-style:none; scrollbar-width:none;}
-  .jumprow::-webkit-scrollbar{display:none;}
-  .jumprow button{flex:0 0 auto; background:var(--cyan); color:#08121a; border:none; border-radius:7px;
-    padding:9px 14px; font-size:10px; font-weight:700; font-family:var(--mono); letter-spacing:.06em;}
+  /* ---------- BUTTONS PRO STYLE ---------- */
+  .chsel { 
+    display: flex; 
+    gap: 6px; 
+    margin-bottom: 12px; 
+    background: #060910;
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid #141c29;
+    box-shadow: inset 0 1px 4px rgba(0,0,0,0.8);
+  }
+  .chsel button {
+    flex: 1; 
+    padding: 9px 0; 
+    background: linear-gradient(180deg, #151d2a 0%, #0b1018 100%); 
+    border: 1px solid #1b2636;
+    border-radius: 6px; 
+    color: #64748b; 
+    font-size: 10.5px; 
+    font-weight: 800;
+    font-family: var(--mono); 
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
+    transition: all .15s ease;
+    position: relative;
+  }
+  .chsel button:active { transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); }
+  .chsel button.active {
+    background: linear-gradient(180deg, #12283a 0%, #081622 100%); 
+    border-color: var(--cyan);
+    color: var(--cyan); 
+    text-shadow: 0 0 8px var(--cyan-glow);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.35), inset 0 0 6px rgba(0, 229, 255, 0.15);
+  }
+  .chsel button.active::after {
+    content: '';
+    position: absolute;
+    top: -1px; left: 20%; right: 20%;
+    height: 2px;
+    background: var(--cyan);
+    box-shadow: 0 0 6px var(--cyan);
+    border-radius: 0 0 2px 2px;
+  }
 
-  .presetlist button{width:100%; text-align:left; padding:13px 12px; margin-bottom:8px; border-radius:10px;
-    background:var(--panel2); border:1px solid var(--line); color:var(--text); font-size:12px; font-weight:600;
-    display:flex; justify-content:space-between; align-items:center; font-family:var(--mono);}
-  .presetlist button .tag{font-size:10px; color:var(--textdim); font-family:var(--mono); font-weight:400;}
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .toggle {
+    padding: 12px 6px; 
+    border-radius: 7px; 
+    background: linear-gradient(180deg, #151e2b 0%, #0b111a 100%); 
+    border: 1px solid #1c2738;
+    text-align: center; 
+    font-size: 11px; 
+    font-weight: 800; 
+    color: #64748b; 
+    font-family: var(--mono); 
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+    transition: all .12s ease;
+    position: relative;
+  }
+  .toggle:active { transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); }
+  .toggle.route-on { 
+    background: linear-gradient(180deg, #0e2b20 0%, #051610 100%); 
+    border-color: var(--mint); 
+    color: var(--mint); 
+    text-shadow: 0 0 8px rgba(62, 232, 154, 0.6);
+    box-shadow: 0 0 12px rgba(62, 232, 154, 0.35), inset 0 0 8px rgba(62, 232, 154, 0.18);
+  }
+  .toggle.route-on::after {
+    content: '';
+    position: absolute;
+    top: 5px; right: 6px;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--mint);
+    box-shadow: 0 0 6px var(--mint);
+  }
+  .toggle.mute-on { 
+    background: linear-gradient(180deg, #3d0f1c 0%, #1c050c 100%); 
+    border-color: var(--red); 
+    color: var(--red); 
+    text-shadow: 0 0 8px rgba(255, 51, 102, 0.6);
+    box-shadow: 0 0 12px rgba(255, 51, 102, 0.4), inset 0 0 8px rgba(255, 51, 102, 0.2);
+  }
+  .toggle.mute-on::after {
+    content: '';
+    position: absolute;
+    top: 5px; right: 6px;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 6px var(--red);
+  }
 
-  .save-row{display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-top:10px;}
-  .btn{padding:11px 4px; border-radius:10px; border:1px solid var(--line); background:var(--panel2);
-    color:var(--text); font-size:10px; font-weight:700; letter-spacing:.03em; font-family:var(--mono);}
-  .btn.primary{background:var(--cyan); color:#08121a; border-color:var(--cyan);}
+  .bandrow { 
+    display: grid; 
+    grid-template-columns: repeat(9, 1fr); 
+    gap: 4px; 
+    margin: 12px 0; 
+    background: #060910;
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid #141c29;
+    box-shadow: inset 0 1px 4px rgba(0,0,0,0.8);
+  }
+  .bandrow button {
+    aspect-ratio: 1; 
+    border-radius: 5px; 
+    background: linear-gradient(180deg, #151d2a 0%, #0b1018 100%); 
+    border: 1px solid #1c2738;
+    color: #64748b; 
+    font-size: 10px; 
+    font-weight: 800; 
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
+    transition: all .12s ease;
+  }
+  .bandrow button:active { transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); }
+  .bandrow button.active { 
+    background: linear-gradient(180deg, #00e5ff 0%, #009cb8 100%); 
+    color: #03070d; 
+    border-color: #00e5ff; 
+    box-shadow: 0 0 10px var(--cyan-glow), inset 0 1px 0 rgba(255,255,255,0.4); 
+    font-weight: 900;
+  }
 
-  #toast{position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(120%); background:var(--panel2);
-    border:1px solid var(--line); color:var(--text); padding:11px 20px; border-radius:24px; font-size:11px; font-weight:600;
-    transition:transform .25s ease; z-index:50; box-shadow:0 8px 24px rgba(0,0,0,.5); font-family:var(--mono);}
-  #toast.show{transform:translateX(-50%) translateY(0);}
+  /* ---------- FADER VERTIKAL (MIXER STRIP) ---------- */
+  .faderstrip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 6px 0; }
+  .fadercol { display: flex; flex-direction: column; align-items: center; }
+  .fadercol .flabel { font-size: 9px; letter-spacing: .1em; color: var(--mint); font-weight: 700; margin-bottom: 8px; }
+  .fadercol .fval { font-size: 11px; color: var(--amber); font-weight: 700; margin-top: 8px; font-family: var(--mono); }
 
-  /* ---------- PENGATURAN / PIN / LOGO ---------- */
-  input.txt, select.sel{width:100%; background:var(--panel2); border:1px solid var(--line); color:var(--text);
-    font-family:var(--mono); font-size:14px; padding:10px; border-radius:8px; user-select:text;}
-  input.txt{letter-spacing:.3em; text-align:center;}
-  .row2{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px;}
-  .modal{position:fixed; inset:0; background:rgba(4,7,12,.82); display:none; align-items:center; justify-content:center; z-index:80; padding:20px;}
-  .modal.show{display:flex;}
-  .modal .box{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px; width:100%; max-width:340px;}
-  .modal .msg{font-size:11px; line-height:1.6; color:var(--text); margin-bottom:12px; text-transform:none; letter-spacing:0;}
-  .hint{font-size:10px; color:var(--textdim); line-height:1.6; padding:4px 2px 0; text-transform:none; letter-spacing:0;}
+  .fadertrack {
+    position: relative; 
+    width: 44px; 
+    height: 165px; 
+    background: #080c14; 
+    border: 1px solid #1a2436; 
+    border-radius: 8px; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.7);
+  }
+  .fadertrack::before { 
+    content: ''; 
+    position: absolute; 
+    top: 12px; bottom: 12px; left: 50%;
+    transform: translateX(-50%); 
+    width: 4px; 
+    background: #020408; 
+    border-left: 1px solid #000;
+    border-right: 1px solid #1e2c40;
+    border-radius: 2px;
+    box-shadow: inset 0 0 3px #000;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .fadertrack::after {
+    content: '';
+    position: absolute;
+    top: 18px; bottom: 18px; left: 4px; right: 4px;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 18px,
+      rgba(112, 132, 153, 0.25) 18px,
+      rgba(112, 132, 153, 0.25) 20px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+  input.vslider {
+    -webkit-appearance: none; appearance: none; 
+    writing-mode: vertical-lr; direction: rtl;
+    width: 38px; height: 148px; 
+    background: transparent; outline: none; 
+    margin: 0; padding: 0; z-index: 2; display: block; cursor: pointer;
+  }
+  input.vslider::-webkit-slider-runnable-track { width: 100%; background: transparent; border: none; }
+  input.vslider::-webkit-slider-thumb {
+    -webkit-appearance: none; 
+    width: 38px; height: 22px; border-radius: 4px;
+    background: linear-gradient(180deg, #24324a 0%, #121927 44%, #00e5ff 45%, #00e5ff 55%, #121927 56%, #24324a 100%);
+    border: 1.5px solid #06090e; 
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.5), 0 4px 8px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.2); 
+    cursor: grab;
+  }
+  input.vslider::-webkit-slider-thumb:active {
+    cursor: grabbing;
+    box-shadow: 0 0 14px var(--cyan), 0 2px 4px rgba(0, 0, 0, 0.9);
+  }
+  input.vslider::-moz-range-track { width: 100%; background: transparent; }
+  input.vslider::-moz-range-thumb {
+    width: 38px; height: 22px; border-radius: 4px;
+    background: linear-gradient(180deg, #24324a 0%, #121927 44%, #00e5ff 45%, #00e5ff 55%, #121927 56%, #24324a 100%);
+    border: 1.5px solid #06090e;
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.5), 0 4px 8px rgba(0, 0, 0, 0.8);
+    cursor: grab;
+  }
+
+  /* ---------- SLIDER HORIZONTAL PRO ---------- */
+  .sliderow { padding: 10px 2px 14px; }
+  .sliderow .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  input[type=range]:not(.vslider) {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 8px; border-radius: 4px; 
+    background: #06090f; border: 1px solid #1a2536;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8);
+    outline: none; margin: 8px 0;
+  }
+  input[type=range]:not(.vslider)::-webkit-slider-runnable-track { height: 8px; background: transparent; border: none; }
+  input[type=range]:not(.vslider)::-webkit-slider-thumb {
+    -webkit-appearance: none; 
+    width: 24px; height: 30px; margin-top: -12px; border-radius: 4px;
+    background: linear-gradient(90deg, #24324a 0%, #121927 43%, #00e5ff 45%, #00e5ff 55%, #121927 57%, #24324a 100%);
+    border: 1.5px solid #06090e; 
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.45), 0 4px 8px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.2); 
+    cursor: grab;
+  }
+  input[type=range]:not(.vslider)::-webkit-slider-thumb:active {
+    cursor: grabbing; transform: scale(1.06); box-shadow: 0 0 14px var(--cyan), 0 2px 4px rgba(0, 0, 0, 0.9);
+  }
+  input[type=range]:not(.vslider)::-moz-range-track {
+    height: 8px; border-radius: 4px; background: #06090f; border: 1px solid #1a2536; box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8);
+  }
+  input[type=range]:not(.vslider)::-moz-range-thumb {
+    width: 24px; height: 30px; border-radius: 4px;
+    background: linear-gradient(90deg, #24324a 0%, #121927 43%, #00e5ff 45%, #00e5ff 55%, #121927 57%, #24324a 100%);
+    border: 1.5px solid #06090e;
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.45), 0 4px 8px rgba(0, 0, 0, 0.8);
+    cursor: grab;
+  }
+
+  /* ---------- PRESET MEMORY BANK CARDS ---------- */
+  .presetlist { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  .preset-card {
+    background: linear-gradient(180deg, #151e2b 0%, #0b111a 100%);
+    border: 1px solid #1c2738;
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06);
+    transition: all .15s ease;
+    position: relative;
+  }
+  .preset-card:hover { border-color: #2c3e58; }
+  .preset-card.active-slot {
+    border-color: var(--cyan);
+    background: linear-gradient(180deg, #132435 0%, #08141f 100%);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.3), inset 0 0 6px rgba(0, 229, 255, 0.15);
+  }
+  .preset-card.active-slot::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 15%; bottom: 15%;
+    width: 3px;
+    background: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan);
+    border-radius: 0 2px 2px 0;
+  }
+  .preset-slot-id {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #060910;
+    border: 1px solid #162030;
+    border-radius: 6px;
+    padding: 4px 6px;
+    min-width: 34px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);
+  }
+  .preset-slot-id .slot-chip { font-size: 6.5px; font-weight: 900; color: var(--textdim); letter-spacing: .08em; }
+  .preset-slot-id .slot-num { font-size: 13px; font-weight: 900; color: var(--cyan); font-family: var(--mono); text-shadow: 0 0 6px var(--cyan-glow); line-height: 1.1; }
+  .preset-info { flex: 1; min-width: 0; }
+  .preset-title { font-size: 11px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: .04em; margin-bottom: 2px; }
+  .preset-card.active-slot .preset-title { color: #ffffff; text-shadow: 0 0 6px rgba(255,255,255,0.4); }
+  .preset-desc { font-size: 8.5px; color: var(--textdim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: none; letter-spacing: 0; }
+  .preset-actions { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+  .btn-action {
+    padding: 7px 9px; border-radius: 5px; font-size: 9.5px; font-weight: 800; font-family: var(--mono);
+    cursor: pointer; border: 1px solid #1c2738; background: linear-gradient(180deg, #182232 0%, #0d131e 100%);
+    color: var(--textdim); box-shadow: 0 2px 4px rgba(0,0,0,0.5); transition: all .12s ease;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .btn-action:active { transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); }
+  .btn-action.btn-recall {
+    color: var(--cyan); border-color: rgba(0, 229, 255, 0.4);
+    background: linear-gradient(180deg, rgba(0, 229, 255, 0.12) 0%, #0b141f 100%);
+  }
+  .btn-action.btn-recall:hover { box-shadow: 0 0 8px var(--cyan-glow); }
+  .btn-action.active-label {
+    background: rgba(62, 232, 154, 0.15); border-color: var(--mint);
+    color: var(--mint); box-shadow: 0 0 8px rgba(62, 232, 154, 0.4); pointer-events: none;
+  }
+  .btn-action.btn-store { color: var(--amber); border-color: rgba(255, 201, 74, 0.4); }
+
+  /* ---------- CANVASES & RTA ---------- */
+  .graphwrap { background: #070a10; border-radius: 8px; border: 1px solid var(--line); padding: 8px; }
+  .legend { display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 4px; }
+  .legend span { font-size: 8px; color: var(--textdim); display: flex; align-items: center; gap: 4px; }
+  .legend i { width: 7px; height: 7px; border-radius: 2px; display: inline-block; }
+  canvas { width: 100%; display: block; }
+  .rtalabels { display: flex; gap: 2px; margin-top: 4px; }
+  .rtalabels span { flex: 1; text-align: center; font-size: 8px; color: var(--textdim); font-weight: 700; }
+
+  /* COMPRESSOR */
+  .complayout { display: flex; gap: 8px; margin-bottom: 8px; }
+  .compgraph { flex: 1; min-width: 0; }
+  .grmeter { width: 40px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .grmeter .glabel { font-size: 7.5px; color: var(--textdim); font-weight: 700; }
+  .grbarwrap { width: 14px; height: 140px; background: #06090e; border-radius: 4px; overflow: hidden; display: flex; align-items: flex-end; border: 1px solid var(--line); }
+  .grbarfill { width: 100%; background: linear-gradient(0deg, var(--mint), var(--amber) 60%, var(--red) 90%); height: 6%; transition: height .1s linear; }
+  .grval { font-size: 9px; color: var(--red); font-weight: 700; }
+  .compactive { display: inline-block; font-size: 8px; font-weight: 700; padding: 3px 8px; border-radius: 12px; background: rgba(62, 232, 154, 0.15); color: var(--mint); float: right; }
+  .compactive.off { background: #16202c; color: var(--textdim); }
+
+  /* ---------- BOTTOM TABS (ALA PINTEREST) ---------- */
+  #tabs {
+    position: absolute; bottom: 0; left: 0; right: 0; width: 100%;
+    display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr);
+    gap: 4px; padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 6px));
+    background: rgba(20, 25, 35, 0.95); backdrop-filter: blur(10px);
+    border-top: 1px solid var(--line); z-index: 50; box-shadow: 0 -8px 24px rgba(0,0,0,0.7);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s ease;
+  }
+  #tabs.hidden { transform: translateY(115%); opacity: 0; pointer-events: none; }
+  #tabs button {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; background: transparent; border: 1px solid transparent; border-radius: 6px;
+    color: var(--textdim); font-size: 9.5px; font-family: var(--mono); font-weight: 600;
+    padding: 6px 2px; line-height: 1; white-space: nowrap; cursor: pointer; transition: all .15s ease;
+  }
+  #tabs button svg { width: 18px; height: 18px; stroke-width: 2.2; transition: transform .15s ease; }
+  #tabs button.active {
+    color: var(--cyan); background: rgba(0, 229, 255, 0.08); border-color: rgba(0, 229, 255, 0.4); text-shadow: 0 0 8px var(--cyan-glow);
+  }
+  #tabs button.active svg { transform: scale(1.1); stroke: var(--cyan); filter: drop-shadow(0 0 6px var(--cyan)); }
+
+  /* TOMBOL VIRTUAL TOGGLE */
+  #tabToggleBtn {
+    position: absolute; bottom: 16px; right: 16px; width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(135deg, #182538 0%, #0a111a 100%);
+    border: 1.5px solid var(--cyan); color: var(--cyan); display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.8), 0 0 12px var(--cyan-glow); z-index: 60; cursor: pointer;
+    opacity: 0; transform: scale(0.6) translateY(20px); pointer-events: none;
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  #tabToggleBtn.show { opacity: 1; transform: scale(1) translateY(0); pointer-events: auto; }
+  #tabToggleBtn:active { transform: scale(0.92); }
+  #tabToggleBtn svg { width: 20px; height: 20px; stroke-width: 2.2; filter: drop-shadow(0 0 4px var(--cyan)); }
+
+  /* ---------- TOAST & MODAL ---------- */
+  #toast {
+    position: fixed; top: 110px; right: 12px; left: auto; transform: translateX(130%);
+background: rgba(255, 201, 74, 0.25); /* Kuning transparan ~25-30% */
+  backdrop-filter: blur(8px);           /* Efek kaca buram di belakangnya */
+  border: 1px solid var(--red);          /* Garis tepi kuning tegas */
+  color: #ffc94a;                       /* Teks kuning menyala */
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7), 0 0 12px rgba(255, 201, 74, 0.35); /* Glow LED kuning */
+ padding: 8px 14px; border-radius: 8px; font-size: 10px; font-weight: 700;
+    letter-spacing: .06em; transition: transform .25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 1000;  pointer-events: none; max-width: 80%;
+  }
+  #toast.show { transform: translateX(0); }
+
+  .btn {
+    padding: 10px 6px; border-radius: 6px; border: 1px solid #1e2a3c;
+    background: linear-gradient(180deg, #16202e 0%, #0c121a 100%); color: var(--text);
+    font-size: 10px; font-weight: 800; cursor: pointer; text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06); transition: all .12s ease;
+  }
+  .btn:active { transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); }
+  .btn.primary {
+    background: linear-gradient(180deg, #00e5ff 0%, #009cb8 100%); color: #03070d;
+    border-color: #00e5ff; font-weight: 900; box-shadow: 0 0 10px var(--cyan-glow), inset 0 1px 0 rgba(255,255,255,0.4);
+  }
+
+  input.txt {
+    width: 100%; background: var(--panel2); border: 1px solid var(--line); color: var(--text);
+    font-family: var(--mono); font-size: 14px; padding: 10px; border-radius: 6px; user-select: text;
+    letter-spacing: .3em; text-align: center; outline: none;
+  }
+  input.txt:focus { border-color: var(--cyan); box-shadow: 0 0 8px var(--cyan-glow); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .hint { font-size: 9px; color: var(--textdim); line-height: 1.5; padding: 4px 2px 0; text-transform: none; letter-spacing: 0; }
+
+  .modal {
+    position: fixed; inset: 0; background: rgba(5,8,14,.85); backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center; z-index: 120; padding: 20px;
+  }
+  .modal.show { display: flex; }
+  .modal .box { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; width: 100%; max-width: 320px; }
+  .modal .msg { font-size: 11px; line-height: 1.5; color: var(--text); margin-bottom: 10px; text-transform: none; }
 </style>
 </head>
 <body>
+
 <div id="app">
 
+  <!-- TOP HEADER -->
   <header>
-    <div class="brandrow">
-      <div class="brand"><b>DLMS MINI 240</b></div>
-      <button class="connbtn" id="connBtn"><span class="dot"></span><span id="connLabel">CONNECT</span></button>
+<div class="brandrow">
+      <div class="brand">
+        <!-- GANTI DENGAN LOGO GAMBAR -->
+        <img src="./elkasariDSP.png" alt="ELIKASARI DSP S3" class="brand-logo">
+      </div>
+      <button class="connbtn" id="connBtn">
+        <span class="dot"></span>
+        <span id="connLabel">CONNECT</span>
+      </button>
     </div>
+
     <div class="presetbar">
       <select id="presetQuickSel"></select>
       <button id="quickLoadBtn">LOAD</button>
@@ -186,44 +720,108 @@
     </div>
   </header>
 
-  <div class="overview">
-    <div class="ovlabel">INPUTS</div>
-    <div class="cardgrid" id="inCards"></div>
-    <div class="ovlabel">OUTPUTS</div>
-    <div class="cardgrid" id="outCards"></div>
-  </div>
+  <!-- MAIN SCROLLABLE WORKSPACE -->
+  <main id="main">
+    <!-- OVERVIEW METER BRIDGE (IKUT BERGULIR/TENGGELAM) -->
+    <div class="overview">
+      <div class="ovlabel">INPUT CHANNELS</div>
+      <div class="cardgrid inputs" id="inCards"></div>
+      <div class="ovlabel">OUTPUT CHANNELS (METER BRIDGE)</div>
+      <div class="cardgrid outputs" id="outCards"></div>
+    </div>
 
+    <!-- 8 KONTEN TAB WINDOW -->
+    <div class="tab-window active" id="content-matrix"></div>
+    <div class="tab-window" id="content-xover"></div>
+    <div class="tab-window" id="content-eq"></div>
+    <div class="tab-window" id="content-delay"></div>
+    <div class="tab-window" id="content-comp"></div>
+    <div class="tab-window" id="content-rta"></div>
+    <div class="tab-window" id="content-preset"></div>
+    <div class="tab-window" id="content-settings"></div>
+  </main>
+
+  <!-- BOTTOM NAVIGATION (ALA PINTEREST AUTO-HIDE) -->
   <nav id="tabs">
-    <button data-tab="matrix" class="active">MATRIX</button>
-    <button data-tab="xover">CROSSOVER</button>
-    <button data-tab="eq">EQ 9-BAND</button>
-    <button data-tab="delay">DELAY</button>
-    <button data-tab="comp">COMPRESSOR</button>
-    <button data-tab="rta">LEVEL METER</button>
-    <button data-tab="preset">PRESET</button>
-    <button data-tab="settings">PENGATURAN</button>
+    <button data-tab="matrix" class="active" title="Matrix">
+      <i data-lucide="grid-3x3"></i>
+      <span>Matrix</span>
+    </button>
+    <button data-tab="xover" title="Crossover">
+      <i data-lucide="split"></i>
+      <span>X-Over</span>
+    </button>
+    <button data-tab="eq" title="Equalizer">
+      <i data-lucide="sliders-horizontal"></i>
+      <span>EQ</span>
+    </button>
+    <button data-tab="delay" title="Delay">
+      <i data-lucide="hourglass"></i>
+      <span>Delay</span>
+    </button>
+    <button data-tab="comp" title="Compressor">
+      <i data-lucide="minimize-2"></i>
+      <span>Comp</span>
+    </button>
+    <button data-tab="rta" title="Level Meter">
+      <i data-lucide="bar-chart-3"></i>
+      <span>RTA</span>
+    </button>
+    <button data-tab="preset" title="Preset">
+      <i data-lucide="save"></i>
+      <span>Preset</span>
+    </button>
+    <button data-tab="settings" title="Pengaturan">
+      <i data-lucide="sliders"></i>
+      <span>Setup</span>
+    </button>
   </nav>
 
-  <main id="main"></main>
+  <!-- TOMBOL VIRTUAL MENGAMBANG (MUNCUL SAAT TAB TERSEMBUNYI) -->
+  <button id="tabToggleBtn" title="Buka Menu Tab">
+    <i data-lucide="layout-grid"></i>
+  </button>
+
 </div>
 
 <div id="toast"></div>
 
-<div id="pinModal" class="modal"><div class="box">
-  <div class="msg" id="pinMsg"></div>
-  <input class="txt" id="pinModalInp" type="password" inputmode="numeric" maxlength="6" placeholder="------" autocomplete="off">
-  <div class="row2"><button class="btn" id="pinCancel">BATAL</button><button class="btn primary" id="pinOk">MASUK</button></div>
-</div></div>
+<!-- MODAL PIN -->
+<div id="pinModal" class="modal">
+  <div class="box">
+    <div class="msg" id="pinMsg"></div>
+    <input class="txt" id="pinModalInp" type="password" inputmode="numeric" maxlength="6" placeholder="------" autocomplete="off">
+    <div class="row2">
+      <button class="btn" id="pinCancel">BATAL</button>
+      <button class="btn primary" id="pinOk">MASUK</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDIT PRESET -->
+<div id="presetModal" class="modal">
+  <div class="box">
+    <div class="msg" style="color:var(--cyan); font-weight:800; letter-spacing:.1em; margin-bottom:12px;">
+      EDIT PRESET MEMORY
+    </div>
+    <input class="txt" id="presetNameInp" type="text" maxlength="22" placeholder="NAMA PRESET (MISAL: SUB 18 LAPANGAN)" style="text-align:left; letter-spacing:.05em; font-size:11px; margin-bottom:8px;">
+    <input class="txt" id="presetDescInp" type="text" maxlength="40" placeholder="KETERANGAN (MISAL: X-OVER 90HZ + DELAY)" style="text-align:left; letter-spacing:0; font-size:10px; color:var(--textdim); margin-bottom:12px;">
+    <div class="row2">
+      <button class="btn" id="presetModalCancel">BATAL</button>
+      <button class="btn primary" id="presetModalSave">SIMPAN</button>
+    </div>
+  </div>
+</div>
 
 <script>
 /* ============================================================
-   DLMS MINI 240 — BLE CONTROL PROTOCOL (SAMA PERSIS, GAK BERUBAH)
+   BLE CONTROL PROTOCOL & DSP CONSTANTS
    ============================================================ */
 const SERVICE_UUID   = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
 const CHAR_CONTROL    = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
 const CHAR_STATUS     = 'beb5483e-36e1-4688-b7f5-ea07361b26a9';
 const CHAR_RTA        = 'beb5483e-36e1-4688-b7f5-ea07361b26aa';
-const CMD_AUTH        = 0x20;   // [0x20, 6 digit PIN ASCII] - dipakai kalau PIN Bluetooth diaktifkan di alat
+const CMD_AUTH        = 0x20;
 
 const CMD = {
   SET_ROUTE:0x01, SET_GAIN:0x02, SET_MUTE:0x03, SET_XOVER_HPF:0x04, SET_XOVER_LPF:0x05,
@@ -234,14 +832,35 @@ const CMD = {
 let device=null, controlChar=null, connected=false, authed=false, statusSeen=false, hasStatusChar=false;
 let activeCh = 0;
 let activeBand = 0;
+let currentTab = 'matrix';
 
 const FREQ_ISO = [20,22,25,28,32,40,50,63,80,100,125,160,200,250,315,400,500,630,800,1000,1250,1600,2000,2500,3150,4000,5000,6300,8000,10000,12500,16000,20000];
 const METER_LABELS = ['IN-L','IN-R','OUT1','OUT2','OUT3','OUT4'];
-// Nama channel/preset di bawah ini PLACEHOLDER doang (belum tersambung ke firmware,
-// belum bisa diketik/disimpan -> kalau nanti mau beneran custom & persist, firmware perlu ditambah NVS string storage)
 const OUT_NAMES = ['OUT 1', 'OUT 2', 'OUT 3', 'OUT 4'];
-const PRESET_NAMES = ['PRESET 1','PRESET 2','PRESET 3','PRESET 4','PRESET 5'];
 
+/* ============================================================
+   PRO AUDIO HARDWARE PRESET PROFILES (DENGAN LOCALSTORAGE)
+   ============================================================ */
+const DEFAULT_PRESET_PROFILES = [
+  { name: 'FLAT / BYPASS (FOH)', desc: 'Stereo Linear Fullrange (20Hz - 20kHz)' },
+  { name: 'SUB + MID-HIGH (2.1)', desc: 'X-Over 100Hz • Subwoofer + Satellites' },
+  { name: 'CLUB / BASS BOOST', desc: 'V-Shape EQ • Deep Bass & Crisp High' },
+  { name: 'LIVE BAND / VOCAL', desc: 'Warm Low-Mid • Limiter Protected' },
+  { name: 'OUTDOOR HIGH-POWER', desc: 'HPF 35Hz • Long Throw Brickwall' }
+];
+
+function getStoredPresets() {
+  try {
+    const saved = localStorage.getItem('elkasari_preset_profiles');
+    if (saved) return JSON.parse(saved);
+  } catch(e){}
+  return DEFAULT_PRESET_PROFILES;
+}
+
+let presetProfiles = getStoredPresets();
+let activePresetSlot = 0;
+
+// STATE OBJEK DSP (Didefinisikan setelah presetProfiles siap)
 const state = {
   route:[0,1,2,2], gain:[0,0,0,0], mute:[false,false,false,false,false,false],
   xoverHpf:[20,20,20,20], xoverLpf:[20000,20000,20000,20000],
@@ -250,10 +869,16 @@ const state = {
   peqQ:[[10,10,10,10,10,10,10,10,10],[10,10,10,10,10,10,10,10,10],[10,10,10,10,10,10,10,10,10],[10,10,10,10,10,10,10,10,10]],
   delay:[0,0,0,0],
   limThresh:[0,0,0,0], limRatio:[4,4,4,4], limAttack:[10,10,10,10], limRelease:[100,100,100,100],
-  presets:PRESET_NAMES
+  presets: presetProfiles.map(p => p.name)
 };
 
-/* ---------------- BLE CONNECTION ---------------- */
+function saveStoredPresets() {
+  localStorage.setItem('elkasari_preset_profiles', JSON.stringify(presetProfiles));
+  state.presets = presetProfiles.map(p => p.name);
+  fillPresetQuickSel();
+}
+
+/* ---------------- BLE ENGINE & QUEUE ---------------- */
 const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
 const pinAscii = (pin)=>Array.from(pin).map(c=>c.charCodeAt(0));
 
@@ -279,7 +904,6 @@ function askPin(msg){
   });
 }
 
-// Alat membalas GET_ALL_STATUS hanya kalau akses diizinkan (PIN mati / sudah AUTH)
 async function probeAccess(){
   statusSeen=false;
   await writeRaw(controlChar,[CMD.GET_ALL_STATUS]);
@@ -293,10 +917,9 @@ async function authenticate(pin){
 }
 
 async function connectBLE(){
-  if(!navigator.bluetooth){ toast('Web Bluetooth tidak didukung — buka di Chrome Android'); return; }
+  if(!navigator.bluetooth){ toast('Web Bluetooth tidak didukung — gunakan Chrome Android'); return; }
   try{
     device = await navigator.bluetooth.requestDevice({
-      // cari lewat service UUID (tetap ketemu walau nama Bluetooth diganti), nama "DLMS" tetap diterima
       filters:[{ services:[SERVICE_UUID] }, { namePrefix:'DLMS' }],
       optionalServices:[SERVICE_UUID]
     });
@@ -322,7 +945,6 @@ async function connectBLE(){
     connected = true;
     updateConnUI();
 
-    // --- cek akses / PIN ---
     const saved = localStorage.getItem('dlms_pin');
     if(saved && hasStatusChar) await writeRaw(controlChar,[CMD_AUTH, ...pinAscii(saved)]);
     let ok = hasStatusChar ? await probeAccess() : true;
@@ -337,13 +959,14 @@ async function connectBLE(){
     }
     authed = ok;
     updateConnUI();
-    toast(authed ? 'Terhubung ke board' : 'Terhubung, tapi terkunci PIN');
+    toast(authed ? 'Terhubung ke PERANGKAT' : 'Terhubung, tapi terkunci PIN');
     if(authed) sendCmd(CMD.GET_ALL_STATUS, []);
   }catch(e){
     toast('Gagal connect: ' + e.message);
   }
 }
-function onDisconnected(){ connected=false; authed=false; sendQ.clear(); updateConnUI(); toast('Terputus dari board'); }
+
+function onDisconnected(){ connected=false; authed=false; sendQ.clear(); updateConnUI(); toast('Terputus dari PERANGKAT'); }
 function updateConnUI(){
   const btn=document.getElementById('connBtn');
   const lbl=document.getElementById('connLabel');
@@ -351,9 +974,6 @@ function updateConnUI(){
   lbl.textContent = connected ? (authed ? 'SYNCED' : 'LOCKED') : 'CONNECT';
 }
 
-// Antrean kirim: satu per satu (BLE tidak boleh menulis bersamaan) dan berurutan.
-// Perintah "live" dari slider memakai key yang sama -> yang menunggu di antrean diganti nilai terbaru,
-// jadi alat selalu mengikuti jari tanpa menumpuk paket.
 const sendQ = new Map(); let sendBusy = false, sendSeq = 0, sendFailToast = 0;
 async function flushSendQ(){
   sendBusy = true;
@@ -367,20 +987,19 @@ async function flushSendQ(){
   sendBusy = false;
 }
 function enqueue(key, cmd, payloadArr){
-  if(!connected || !controlChar){ toast('Belum terhubung ke board'); return; }
-  if(!authed){ toast('Alat terkunci PIN — buka tab PENGATURAN'); return; }
+  if(!connected || !controlChar){ toast('Belum terhubung ke PERANGKAT'); return; }
+  if(!authed){ toast('Alat terkunci PIN — buka tab SETUP'); return; }
   sendQ.set(key, [cmd, ...payloadArr]);
   if(!sendBusy) flushSendQ();
 }
-function sendCmd(cmd, payloadArr){ enqueue('c'+(++sendSeq), cmd, payloadArr); }          // perintah biasa (berurutan)
-function sendLive(key, cmd, payloadArr){ enqueue('live:'+key, cmd, payloadArr); }          // slider: nilai terbaru saja
+function sendCmd(cmd, payloadArr){ enqueue('c'+(++sendSeq), cmd, payloadArr); }
+function sendLive(key, cmd, payloadArr){ enqueue('live:'+key, cmd, payloadArr); }
 function i16le(v){ const b=new ArrayBuffer(2); new DataView(b).setInt16(0,v,true); return Array.from(new Uint8Array(b)); }
 function u16le(v){ const b=new ArrayBuffer(2); new DataView(b).setUint16(0,v,true); return Array.from(new Uint8Array(b)); }
 
 function onStatusNotify(e){
   statusSeen = true;
   const dv = e.target.value;
-  // format dari firmware: route[4] u8, gain[4] i16, hpf[4] u16, lpf[4] u16, muteMask u8 = 29 byte
   if(dv && dv.byteLength >= 29){
     let p = 0;
     for(let ch=0; ch<4; ch++) state.route[ch] = dv.getUint8(p++);
@@ -393,10 +1012,9 @@ function onStatusNotify(e){
   if(currentTab!=='settings') render();
   renderOverviewCards();
 }
-// minta status terbaru dari alat (mis. setelah LOAD preset)
 function refreshStatusSoon(){ setTimeout(()=>{ if(connected && authed) sendCmd(CMD.GET_ALL_STATUS, []); }, 500); }
 
-let meterVals = new Array(6).fill(0); // IN-L, IN-R, OUT1-4, skala 0-255
+let meterVals = new Array(6).fill(0);
 function onRtaNotify(e){
   const dv = e.target.value;
   for(let i=0;i<dv.byteLength && i<6;i++) meterVals[i] = dv.getUint8(i);
@@ -405,7 +1023,7 @@ function onRtaNotify(e){
   if(currentTab==='comp') updateGrMeter();
 }
 
-/* ---------------- TOAST ---------------- */
+/* ---------------- TOAST NOTIFICATION ---------------- */
 let toastTimer=null;
 function toast(msg){
   const t=document.getElementById('toast');
@@ -414,7 +1032,7 @@ function toast(msg){
   toastTimer=setTimeout(()=>t.classList.remove('show'), 2200);
 }
 
-/* ---------------- OVERVIEW CARDS (selalu tampil, di atas tab) ---------------- */
+/* ---------------- OVERVIEW CARDS (METER BRIDGE) ---------------- */
 function renderOverviewCards(){
   const inWrap = document.getElementById('inCards');
   inWrap.innerHTML = `
@@ -456,32 +1074,50 @@ function updateMiniBars(){
   }
 }
 
-/* ---------------- TABS ---------------- */
-let currentTab='matrix';
+/* ---------------- NAVIGATION TABS & VIRTUAL BUTTON ---------------- */
 document.getElementById('tabs').addEventListener('click', (e)=>{
-  const b=e.target.closest('button'); if(!b) return;
-  document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('active'));
+  const b = e.target.closest('button');
+  if(!b) return;
+  const targetTab = b.dataset.tab;
+  if(!targetTab) return;
+
+  document.querySelectorAll('#tabs button').forEach(x => x.classList.remove('active'));
   b.classList.add('active');
-  currentTab=b.dataset.tab;
+
+  document.querySelectorAll('.tab-window').forEach(w => w.classList.remove('active'));
+  const win = document.getElementById('content-' + targetTab);
+  if(win) win.classList.add('active');
+
+  currentTab = targetTab;
   render();
 });
+
 document.getElementById('connBtn').addEventListener('click', connectBLE);
 
+/* Quick Preset Selector di Header */
 function fillPresetQuickSel(){
   const sel = document.getElementById('presetQuickSel');
-  sel.innerHTML = state.presets.map((p,i)=>`<option value="${i}">${p}</option>`).join('');
+  sel.innerHTML = presetProfiles.map((p,i)=>`
+    <option value="${i}" ${activePresetSlot===i?'selected':''}>[0${i+1}] ${p.name}</option>
+  `).join('');
 }
+
 document.getElementById('quickLoadBtn').addEventListener('click', ()=>{
   const slot = +document.getElementById('presetQuickSel').value;
-  sendCmd(CMD.LOAD_PRESET,[slot]); toast('Memuat '+state.presets[slot]); refreshStatusSoon();
-});
-document.getElementById('quickSaveBtn').addEventListener('click', ()=>{
-  const slot = +document.getElementById('presetQuickSel').value;
-  sendCmd(CMD.SAVE_PRESET,[slot]); toast('Tersimpan ke '+state.presets[slot]);
+  activePresetSlot = slot;
+  sendCmd(CMD.LOAD_PRESET,[slot]); 
+  toast('Memuat [0' + (slot+1) + '] ' + presetProfiles[slot].name); 
+  refreshStatusSoon();
+  render();
 });
 
-/* ---------------- RENDER ---------------- */
-const main = document.getElementById('main');
+document.getElementById('quickSaveBtn').addEventListener('click', ()=>{
+  const slot = +document.getElementById('presetQuickSel').value;
+  sendCmd(CMD.SAVE_PRESET,[slot]); 
+  toast('Tersimpan ke Slot [0' + (slot+1) + ']');
+});
+
+/* Channel Selector Strip Helper */
 function chSelector(count){
   let html = '<div class="chsel">';
   for(let i=0;i<count;i++){
@@ -490,12 +1126,13 @@ function chSelector(count){
   html += '</div>';
   return html;
 }
-function bindChSelector(){
-  main.querySelectorAll('.chsel button').forEach(b=>{
+function bindChSelector(container){
+  container.querySelectorAll('.chsel button').forEach(b=>{
     b.addEventListener('click', ()=>{ activeCh=+b.dataset.ch; render(); renderOverviewCards(); });
   });
 }
 
+/* ---------------- RENDER WORKSPACE ---------------- */
 function render(){
   if(currentTab==='matrix') renderMatrix();
   else if(currentTab==='xover') renderXover();
@@ -505,18 +1142,22 @@ function render(){
   else if(currentTab==='rta') renderRta();
   else if(currentTab==='preset') renderPreset();
   else if(currentTab==='settings') renderSettings();
+
+  if(window.lucide) { lucide.createIcons(); }
 }
 
+/* 1. MATRIX ROUTING */
 function renderMatrix(){
+  const win = document.getElementById('content-matrix');
   const routes=['LEFT','RIGHT','MIX L+R'];
   let html = `<div class="panel"><h3>Matrix Routing — Output</h3>${chSelector(4)}<div class="grid3">`;
   routes.forEach((r,i)=>{
     html += `<button class="toggle ${state.route[activeCh]===i?'route-on':''}" data-route="${i}">${r}</button>`;
   });
-  html += `</div><p class="hint">Pilih channel output, lalu tentukan sumber sinyal (Left, Right, atau campuran).</p></div>`;
-  main.innerHTML = html;
-  bindChSelector();
-  main.querySelectorAll('[data-route]').forEach(b=>{
+  html += `</div><p class="hint">Pilih channel output, lalu tentukan sumber sinyal (Left, Right, atau gabungan).</p></div>`;
+  win.innerHTML = html;
+  bindChSelector(win);
+  win.querySelectorAll('[data-route]').forEach(b=>{
     b.addEventListener('click', ()=>{
       const r=+b.dataset.route; state.route[activeCh]=r;
       sendCmd(CMD.SET_ROUTE, [activeCh, r]); render();
@@ -524,9 +1165,11 @@ function renderMatrix(){
   });
 }
 
+/* 2. CROSSOVER / CHANNEL STRIP */
 function renderXover(){
+  const win = document.getElementById('content-xover');
   const hpf=state.xoverHpf[activeCh], lpf=state.xoverLpf[activeCh], gain=state.gain[activeCh];
-  main.innerHTML = `
+  win.innerHTML = `
     <div class="panel">${chSelector(4)}
       <div class="toggle ${state.mute[activeCh+2]?'mute-on':''}" id="stripMuteBtn" style="text-align:center;">
         ${state.mute[activeCh+2] ? 'MUTED' : 'MUTE '+OUT_NAMES[activeCh]}
@@ -550,43 +1193,45 @@ function renderXover(){
           <div class="fval" id="lpfVal">${lpf}Hz</div>
         </div>
       </div>
-      <p class="hint">Linkwitz-Riley 24dB/oktaf. HPF motong frekuensi rendah, LPF motong frekuensi tinggi. Geser fader ke atas = naikkan nilai.</p>
+      <p class="hint">Filter Linkwitz-Riley 24dB/oct. Geser ke atas untuk menaikkan nilai.</p>
     </div>`;
-  bindChSelector();
-  document.getElementById('stripMuteBtn').addEventListener('click', ()=>{
+  bindChSelector(win);
+  win.querySelector('#stripMuteBtn').addEventListener('click', ()=>{
     const idx = activeCh+2;
     state.mute[idx] = !state.mute[idx];
     let mask=0; state.mute.forEach((m,i)=>{ if(m) mask |= (1<<i); });
     sendCmd(CMD.SET_MUTE, [mask]); render(); renderOverviewCards();
   });
-  const gs=document.getElementById('gainSlider');
+  const gs=win.querySelector('#gainSlider');
   gs.addEventListener('input', ()=>{
-    document.getElementById('gainVal').textContent = (gs.value>0?'+':'')+gs.value+'dB';
+    win.querySelector('#gainVal').textContent = (gs.value>0?'+':'')+gs.value+'dB';
     state.gain[activeCh]=+gs.value; sendLive('gain'+activeCh, CMD.SET_GAIN,[activeCh,...i16le(+gs.value)]);
   });
   gs.addEventListener('change', ()=>{ state.gain[activeCh]=+gs.value; sendCmd(CMD.SET_GAIN,[activeCh,...i16le(+gs.value)]); renderOverviewCards(); });
-  const hs=document.getElementById('hpfSlider');
+  const hs=win.querySelector('#hpfSlider');
   hs.addEventListener('input', ()=>{
-    document.getElementById('hpfVal').textContent = hs.value+'Hz';
+    win.querySelector('#hpfVal').textContent = hs.value+'Hz';
     state.xoverHpf[activeCh]=+hs.value; sendLive('hpf'+activeCh, CMD.SET_XOVER_HPF,[activeCh,...i16le(+hs.value)]);
   });
   hs.addEventListener('change', ()=>{ state.xoverHpf[activeCh]=+hs.value; sendCmd(CMD.SET_XOVER_HPF,[activeCh,...i16le(+hs.value)]); });
-  const ls=document.getElementById('lpfSlider');
+  const ls=win.querySelector('#lpfSlider');
   ls.addEventListener('input', ()=>{
-    document.getElementById('lpfVal').textContent = ls.value+'Hz';
+    win.querySelector('#lpfVal').textContent = ls.value+'Hz';
     state.xoverLpf[activeCh]=+ls.value; sendLive('lpf'+activeCh, CMD.SET_XOVER_LPF,[activeCh,...i16le(+ls.value)]);
   });
   ls.addEventListener('change', ()=>{ state.xoverLpf[activeCh]=+ls.value; sendCmd(CMD.SET_XOVER_LPF,[activeCh,...i16le(+ls.value)]); });
 }
 
+/* 3. EQUALIZER 9-BAND */
 function renderEq(){
+  const win = document.getElementById('content-eq');
   const fIdx = state.peqFreqIdx[activeCh][activeBand];
   const peqGain = state.peqGain[activeCh][activeBand]/10;
   const q = state.peqQ[activeCh][activeBand]/10;
   let bands='<div class="bandrow">';
   for(let b=0;b<9;b++) bands += `<button data-band="${b}" class="${activeBand===b?'active':''}">${b+1}</button>`;
   bands += '</div>';
-  main.innerHTML = `<div class="panel">${chSelector(4)}</div>
+  win.innerHTML = `<div class="panel">${chSelector(4)}</div>
     <div class="panel"><h3>Parametric EQ — 9 Band</h3>
       <div class="graphwrap"><canvas id="eqCanvas" width="600" height="220"></canvas></div>
       ${bands}
@@ -597,31 +1242,28 @@ function renderEq(){
       <div class="sliderow"><div class="top"><span class="lbl">Q Factor</span><span class="val" id="peqQVal">${q.toFixed(1)}</span></div>
       <input type="range" min="0.3" max="10" step="0.1" value="${q}" id="peqQSlider"></div>
     </div>`;
-  bindChSelector();
+  bindChSelector(win);
   drawEqBars();
-  main.querySelectorAll('[data-band]').forEach(b=>{
+  win.querySelectorAll('[data-band]').forEach(b=>{
     b.addEventListener('click', ()=>{ activeBand=+b.dataset.band; render(); });
   });
-  const fs=document.getElementById('peqFreqSlider'), pgs=document.getElementById('peqGainSlider'), qs=document.getElementById('peqQSlider');
+  const fs=win.querySelector('#peqFreqSlider'), pgs=win.querySelector('#peqGainSlider'), qs=win.querySelector('#peqQSlider');
   function peqPayload(){
     const freqIdx=+fs.value, gainX10=Math.round(+pgs.value*10), qX10=Math.round(+qs.value*10);
     state.peqFreqIdx[activeCh][activeBand]=freqIdx; state.peqGain[activeCh][activeBand]=gainX10; state.peqQ[activeCh][activeBand]=qX10;
     return [activeCh, activeBand, freqIdx, ...i16le(gainX10), ...u16le(qX10)];
   }
   function peqLive(){ sendLive('peq'+activeCh+'_'+activeBand, CMD.SET_PEQ, peqPayload()); }
-  fs.addEventListener('input', ()=>{ document.getElementById('peqFreqVal').textContent = FREQ_ISO[+fs.value]+' Hz'; peqLive(); drawEqBars(); });
+  fs.addEventListener('input', ()=>{ win.querySelector('#peqFreqVal').textContent = FREQ_ISO[+fs.value]+' Hz'; peqLive(); drawEqBars(); });
   pgs.addEventListener('input', ()=>{
-    const v=+pgs.value; document.getElementById('peqGainVal').textContent=(v>0?'+':'')+v.toFixed(1)+' dB';
-    peqLive(); drawEqBars(v);   // bar band aktif ikut gerak, alat ikut berubah saat digeser
+    const v=+pgs.value; win.querySelector('#peqGainVal').textContent=(v>0?'+':'')+v.toFixed(1)+' dB';
+    peqLive(); drawEqBars(v);
   });
-  qs.addEventListener('input', ()=>{ document.getElementById('peqQVal').textContent = (+qs.value).toFixed(1); peqLive(); drawEqBars(); });
-  function sendPeq(){
-    sendCmd(CMD.SET_PEQ, peqPayload());
-    drawEqBars();
-  }
+  qs.addEventListener('input', ()=>{ win.querySelector('#peqQVal').textContent = (+qs.value).toFixed(1); peqLive(); drawEqBars(); });
+  function sendPeq(){ sendCmd(CMD.SET_PEQ, peqPayload()); drawEqBars(); }
   fs.addEventListener('change', sendPeq); pgs.addEventListener('change', sendPeq); qs.addEventListener('change', sendPeq);
 }
-/* ---------- GRAFIK BENANG (CONTINUOUS RESPONSE CURVE) ---------- */
+
 function calcBiquadPeakDb(f0, gainDb, Q, f, fs = 48000) {
   if (Math.abs(gainDb) < 0.05) return 0;
   const A = Math.pow(10, gainDb / 40);
@@ -660,32 +1302,27 @@ function drawEqBars(liveGainOverride) {
 
   ctx.clearRect(0, 0, W, H);
 
-  // Background Grid dB (-12, -6, 0, +6, +12 dB)
   const dBs = [12, 6, 0, -6, -12];
   dBs.forEach(db => {
     const y = midY - (db / 12) * (plotH / 2);
-    ctx.strokeStyle = (db === 0) ? 'rgba(220,230,240,0.35)' : 'rgba(60,90,120,0.2)';
+    ctx.strokeStyle = (db === 0) ? 'rgba(0, 229, 255, 0.4)' : 'rgba(30, 41, 59, 0.6)';
     ctx.lineWidth = (db === 0) ? 1.5 : 1;
     ctx.beginPath(); ctx.moveTo(padLeft, y); ctx.lineTo(W - padRight, y); ctx.stroke();
-    
-    ctx.fillStyle = '#5c7690'; ctx.font = '9px monospace'; ctx.textAlign = 'left';
+    ctx.fillStyle = '#708499'; ctx.font = '9px monospace'; ctx.textAlign = 'left';
     if (db !== 0) ctx.fillText((db > 0 ? '+' : '') + db + 'dB', padLeft + 2, y - 2);
   });
 
-  // Vertical Grid Frekuensi Logaritmik (20Hz - 20kHz)
   const fMarks = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000];
   const lMin = Math.log10(20), lMax = Math.log10(20000);
   fMarks.forEach(f => {
     const x = padLeft + ((Math.log10(f) - lMin) / (lMax - lMin)) * plotW;
-    ctx.strokeStyle = 'rgba(60,90,120,0.18)'; ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(30, 41, 59, 0.5)'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(x, padTop); ctx.lineTo(x, H - padBot); ctx.stroke();
-    
     const txt = f >= 1000 ? (f / 1000) + 'k' : '' + f;
-    ctx.fillStyle = '#5c7690'; ctx.font = '9px monospace'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#708499'; ctx.font = '9px monospace'; ctx.textAlign = 'center';
     ctx.fillText(txt, x, H - 6);
   });
 
-  // Kumpulkan data 9 Band untuk Channel Aktif
   const bands = [];
   for (let b = 0; b < 9; b++) {
     const f = FREQ_ISO[state.peqFreqIdx[activeCh][b]];
@@ -696,58 +1333,48 @@ function drawEqBars(liveGainOverride) {
     bands.push({ freq: f, gain: g, q: q });
   }
 
-  // Gambar Area Bayangan Transparan di Bawah Kurva
+  // Shading Area
   ctx.beginPath();
   ctx.moveTo(padLeft, midY);
   for (let px = 0; px <= plotW; px += 2) {
     const f = Math.pow(10, lMin + (px / plotW) * (lMax - lMin));
     let totalDb = 0;
-    for (let b = 0; b < 9; b++) {
-      totalDb += calcBiquadPeakDb(bands[b].freq, bands[b].gain, bands[b].q, f);
-    }
+    for (let b = 0; b < 9; b++) totalDb += calcBiquadPeakDb(bands[b].freq, bands[b].gain, bands[b].q, f);
     const py = midY - (totalDb / 12) * (plotH / 2);
     ctx.lineTo(padLeft + px, Math.max(padTop, Math.min(H - padBot, py)));
   }
   ctx.lineTo(W - padRight, midY);
   ctx.closePath();
-  ctx.fillStyle = 'rgba(62, 201, 232, 0.12)';
+  ctx.fillStyle = 'rgba(0, 229, 255, 0.12)';
   ctx.fill();
 
-  // Gambar "GRAFIK BENANG" (Garis Kurva Bersinar / Glow)
+  // Kurva Benang Glowing
   ctx.beginPath();
-  ctx.strokeStyle = '#3ec9e8';
+  ctx.strokeStyle = '#00e5ff';
   ctx.lineWidth = 2.5;
-  ctx.shadowColor = '#3ec9e8';
+  ctx.shadowColor = '#00e5ff';
   ctx.shadowBlur = 8;
-
   for (let px = 0; px <= plotW; px += 2) {
     const f = Math.pow(10, lMin + (px / plotW) * (lMax - lMin));
     let totalDb = 0;
-    for (let b = 0; b < 9; b++) {
-      totalDb += calcBiquadPeakDb(bands[b].freq, bands[b].gain, bands[b].q, f);
-    }
+    for (let b = 0; b < 9; b++) totalDb += calcBiquadPeakDb(bands[b].freq, bands[b].gain, bands[b].q, f);
     const py = midY - (totalDb / 12) * (plotH / 2);
     const clampedY = Math.max(padTop, Math.min(H - padBot, py));
     if (px === 0) ctx.moveTo(padLeft + px, clampedY);
     else ctx.lineTo(padLeft + px, clampedY);
   }
   ctx.stroke();
-  ctx.shadowBlur = 0; // Matikan shadow untuk elemen lain
+  ctx.shadowBlur = 0;
 
-  // Gambar Titik Penanda (Node Dots) untuk Masing-masing 9 Band
+  // Titik Node
   for (let b = 0; b < 9; b++) {
     const f = bands[b].freq;
     const x = padLeft + ((Math.log10(f) - lMin) / (lMax - lMin)) * plotW;
-    
-    // Hitung posisi Y kurva tepat di frekuensi band tersebut
     let totalDb = 0;
-    for (let k = 0; k < 9; k++) {
-      totalDb += calcBiquadPeakDb(bands[k].freq, bands[k].gain, bands[k].q, f);
-    }
+    for (let k = 0; k < 9; k++) totalDb += calcBiquadPeakDb(bands[k].freq, bands[k].gain, bands[k].q, f);
     const y = Math.max(padTop + 2, Math.min(H - padBot - 2, midY - (totalDb / 12) * (plotH / 2)));
     const isActive = (b === activeBand);
 
-    // Titik lingkaran luar (Halo) jika band sedang dipilih
     if (isActive) {
       ctx.beginPath();
       ctx.arc(x, y, 7, 0, Math.PI * 2);
@@ -756,17 +1383,15 @@ function drawEqBars(liveGainOverride) {
       ctx.stroke();
     }
 
-    // Titik inti
     ctx.beginPath();
     ctx.arc(x, y, isActive ? 4.5 : 3.5, 0, Math.PI * 2);
     ctx.fillStyle = isActive ? '#ffc94a' : '#3ee89a';
     ctx.fill();
-    ctx.strokeStyle = '#080b12';
+    ctx.strokeStyle = '#0b0c10';
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // Nomor band di atas/bawah titik
-    ctx.fillStyle = isActive ? '#ffc94a' : '#5c7690';
+    ctx.fillStyle = isActive ? '#ffc94a' : '#708499';
     ctx.font = 'bold 9px monospace';
     ctx.textAlign = 'center';
     const labelY = (totalDb >= 0) ? y - 9 : y + 14;
@@ -774,18 +1399,20 @@ function drawEqBars(liveGainOverride) {
   }
 }
 
+/* 4. DELAY */
 function renderDelay(){
+  const win = document.getElementById('content-delay');
   const d = state.delay[activeCh];
-  main.innerHTML = `<div class="panel">${chSelector(4)}</div>
+  win.innerHTML = `<div class="panel">${chSelector(4)}</div>
     <div class="panel"><h3>Time Alignment Delay</h3>
-      <div class="sliderow"><div class="top"><span class="lbl">Delay</span>
+      <div class="sliderow"><div class="top"><span class="lbl">Delay Time</span>
       <span class="val" id="delayVal">${d.toFixed(1)} ms</span></div>
       <input type="range" min="0" max="300" step="0.1" value="${d}" id="delaySlider"></div>
     </div>`;
-  bindChSelector();
-  const ds=document.getElementById('delaySlider');
+  bindChSelector(win);
+  const ds=win.querySelector('#delaySlider');
   ds.addEventListener('input', ()=>{
-    document.getElementById('delayVal').textContent = (+ds.value).toFixed(1)+' ms';
+    win.querySelector('#delayVal').textContent = (+ds.value).toFixed(1)+' ms';
     state.delay[activeCh]=+ds.value; sendLive('delay'+activeCh, CMD.SET_DELAY, [activeCh, ...i16le(Math.round(+ds.value*10))]);
   });
   ds.addEventListener('change', ()=>{
@@ -794,11 +1421,12 @@ function renderDelay(){
   });
 }
 
-/* ---------------- COMPRESSOR (knee curve + GR meter) ---------------- */
+/* 5. COMPRESSOR / LIMITER */
 function renderComp(){
+  const win = document.getElementById('content-comp');
   const th=state.limThresh[activeCh], ra=state.limRatio[activeCh], at=state.limAttack[activeCh], rl=state.limRelease[activeCh];
   const active = ra > 1.5;
-  main.innerHTML = `<div class="panel">${chSelector(4)}</div>
+  win.innerHTML = `<div class="panel">${chSelector(4)}</div>
     <div class="panel">
       <h3>Limiter / Compressor <span class="compactive ${active?'':'off'}">${active?'ACTIVE':'BYPASS'}</span></h3>
       <div class="complayout">
@@ -817,17 +1445,17 @@ function renderComp(){
       <input type="range" min="1" max="100" step="1" value="${at}" id="atSlider"></div>
       <div class="sliderow"><div class="top"><span class="lbl">Release</span><span class="val" id="rlVal">${rl} ms</span></div>
       <input type="range" min="10" max="5000" step="10" value="${rl}" id="rlSlider"></div>
-      <p class="hint">Ratio 1:1 = transparan. Ratio tinggi (mendekati LIM) = brickwall limiter.</p>
+      <p class="hint">Ratio 1:1 = bypass/linier. Ratio &gt; 50:1 = Brickwall Limiter.</p>
     </div>`;
-  bindChSelector();
+  bindChSelector(win);
   drawCompCurve();
   updateGrMeter();
 
-  const ths=document.getElementById('thSlider'), ras=document.getElementById('raSlider'), ats=document.getElementById('atSlider'), rls=document.getElementById('rlSlider');
-  ths.addEventListener('input', ()=>{ document.getElementById('thVal').textContent = (+ths.value).toFixed(1)+' dBFS'; drawCompCurve(); });
-  ras.addEventListener('input', ()=>{ const v=+ras.value; document.getElementById('raVal').textContent = v>=50?'LIM':v.toFixed(1)+':1'; drawCompCurve(); });
-  ats.addEventListener('input', ()=> document.getElementById('atVal').textContent = ats.value+' ms');
-  rls.addEventListener('input', ()=> document.getElementById('rlVal').textContent = rls.value+' ms');
+  const ths=win.querySelector('#thSlider'), ras=win.querySelector('#raSlider'), ats=win.querySelector('#atSlider'), rls=win.querySelector('#rlSlider');
+  ths.addEventListener('input', ()=>{ win.querySelector('#thVal').textContent = (+ths.value).toFixed(1)+' dBFS'; drawCompCurve(); });
+  ras.addEventListener('input', ()=>{ const v=+ras.value; win.querySelector('#raVal').textContent = v>=50?'LIM':v.toFixed(1)+':1'; drawCompCurve(); });
+  ats.addEventListener('input', ()=> win.querySelector('#atVal').textContent = ats.value+' ms');
+  rls.addEventListener('input', ()=> win.querySelector('#rlVal').textContent = rls.value+' ms');
   function limPayload(){
     state.limThresh[activeCh]=+ths.value; state.limRatio[activeCh]=+ras.value;
     state.limAttack[activeCh]=+ats.value; state.limRelease[activeCh]=+rls.value;
@@ -836,18 +1464,16 @@ function renderComp(){
   function limLive(){ sendLive('lim'+activeCh, CMD.SET_LIMITER, limPayload()); }
   ths.addEventListener('input', limLive); ras.addEventListener('input', limLive);
   ats.addEventListener('input', limLive); rls.addEventListener('input', limLive);
-  function sendLim(){
-    sendCmd(CMD.SET_LIMITER, limPayload());
-    renderOverviewCards();
-  }
+  function sendLim(){ sendCmd(CMD.SET_LIMITER, limPayload()); renderOverviewCards(); }
   ths.addEventListener('change', sendLim); ras.addEventListener('change', sendLim);
   ats.addEventListener('change', sendLim); rls.addEventListener('change', sendLim);
 }
+
 function drawCompCurve(){
   const cv=document.getElementById('compCanvas'); if(!cv) return;
   const ctx=cv.getContext('2d'); const W=cv.width, H=cv.height, PAD=24;
   ctx.clearRect(0,0,W,H);
-  ctx.strokeStyle='rgba(60,90,120,0.25)'; ctx.lineWidth=1;
+  ctx.strokeStyle='rgba(30,41,59,0.5)'; ctx.lineWidth=1;
   for(let i=1;i<4;i++){ const y=PAD+(H-PAD*2)/4*i; ctx.beginPath(); ctx.moveTo(PAD,y); ctx.lineTo(W-PAD,y); ctx.stroke(); }
 
   const thSl=document.getElementById('thSlider'), raSl=document.getElementById('raSlider');
@@ -855,13 +1481,11 @@ function drawCompCurve(){
   const ra = raSl ? +raSl.value : state.limRatio[activeCh];
   const dbToXY=(db)=>{ const t=(db+60)/60; return [PAD+t*(W-PAD*2), H-PAD-t*(H-PAD*2)]; };
 
-  // referensi 1:1 (dotted)
-  ctx.setLineDash([4,4]); ctx.strokeStyle='rgba(220,230,240,0.25)'; ctx.lineWidth=1;
+  ctx.setLineDash([4,4]); ctx.strokeStyle='rgba(241,245,249,0.2)'; ctx.lineWidth=1;
   ctx.beginPath(); let [x0,y0]=dbToXY(-60); ctx.moveTo(x0,y0); let [x1,y1]=dbToXY(0); ctx.lineTo(x1,y1); ctx.stroke();
   ctx.setLineDash([]);
 
-  // kurva knee: input<=threshold -> output=input ; input>threshold -> output=threshold+(input-threshold)/ratio
-  ctx.strokeStyle='#3ec9e8'; ctx.lineWidth=2.5; ctx.beginPath();
+  ctx.strokeStyle='#00e5ff'; ctx.lineWidth=2.5; ctx.beginPath();
   for(let px=0; px<=100; px++){
     const inDb = -60 + (px/100)*60;
     const outDb = inDb <= th ? inDb : th + (inDb - th)/ra;
@@ -871,16 +1495,16 @@ function drawCompCurve(){
   }
   ctx.stroke();
 
-  // marker titik threshold
   const [tx,ty] = dbToXY(th);
   ctx.fillStyle='#ffc94a'; ctx.beginPath(); ctx.arc(tx,ty,4,0,Math.PI*2); ctx.fill();
 }
+
 function updateGrMeter(){
   const fill=document.getElementById('grBarFill'), txt=document.getElementById('grValTxt');
   if(!fill) return;
-  const outIdx = 2+activeCh; // meterVals: 0,1=IN-L/R ; 2..5=OUT1-4
+  const outIdx = 2+activeCh;
   const lvlByte = meterVals[outIdx] || 0;
-  const dB = (lvlByte/255)*60 - 60; // 0-255 -> -60..0 dBFS (sama skala kayak firmware)
+  const dB = (lvlByte/255)*60 - 60;
   const th=state.limThresh[activeCh], ra=state.limRatio[activeCh];
   let gr = 0;
   if(dB > th) gr = (dB - th) * (1 - 1/ra);
@@ -889,16 +1513,18 @@ function updateGrMeter(){
   txt.textContent = '-' + gr.toFixed(1);
 }
 
+/* 6. REAL TIME ANALYZER (LEVEL METER) */
 function renderRta(){
+  const win = document.getElementById('content-rta');
   let labels=''; METER_LABELS.forEach(l=> labels += `<span>${l}</span>`);
-  main.innerHTML = `<div class="panel"><h3>Level Meter — Input &amp; Output</h3>
+  win.innerHTML = `<div class="panel"><h3>Level Meter — Input &amp; Output</h3>
     <div class="legend">
       <span><i style="background:var(--cyan)"></i>IN L/R</span>
       <span><i style="background:var(--mint)"></i>OUT 1-4</span>
     </div>
-    <div class="graphwrap"><canvas id="rtaCanvas" width="600" height="360"></canvas></div>
+    <div class="graphwrap"><canvas id="rtaCanvas" width="600" height="340"></canvas></div>
     <div class="rtalabels">${labels}</div>
-    <p class="hint">6 bar level real-time: 2 bar INPUT (sebelum DSP) dan 4 bar OUTPUT (setelah full signal chain).</p></div>`;
+    <p class="hint">Meter visual: 2 Bar Input (Pre-DSP) &amp; 4 Bar Output (Post-DSP).</p></div>`;
   drawMeterBars();
 }
 function drawMeterBars(){
@@ -906,67 +1532,186 @@ function drawMeterBars(){
   const ctx = cv.getContext('2d');
   const W = cv.width, H = cv.height;
   ctx.clearRect(0,0,W,H);
-  ctx.strokeStyle = 'rgba(60,90,120,0.25)'; ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(30,41,59,0.5)'; ctx.lineWidth = 1;
   for(let i=1;i<4;i++){ const y=H/4*i; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
   const n = 6, gap = 14, barW = (W - gap*(n+1)) / n;
   for(let i=0;i<n;i++){
     const x = gap + i*(barW+gap);
     const h = Math.max(2, (meterVals[i]/255)*H*0.95);
     const grad = ctx.createLinearGradient(0,H-h,0,H);
-    grad.addColorStop(0, '#ff5c7a'); grad.addColorStop(0.35,'#ffc94a'); grad.addColorStop(1,'#3ee89a');
-    ctx.fillStyle = i<2 ? '#3ec9e8' : grad;
+    grad.addColorStop(0, '#ff3366'); grad.addColorStop(0.35,'#ffc94a'); grad.addColorStop(1,'#3ee89a');
+    ctx.fillStyle = i<2 ? '#00e5ff' : grad;
     ctx.fillRect(x, H-h, barW, h);
   }
   const sepX = gap + 2*(barW+gap) - gap/2;
-  ctx.strokeStyle = 'rgba(220,230,240,0.3)'; ctx.setLineDash([4,4]); ctx.lineWidth=1;
+  ctx.strokeStyle = 'rgba(241,245,249,0.25)'; ctx.setLineDash([4,4]); ctx.lineWidth=1;
   ctx.beginPath(); ctx.moveTo(sepX,0); ctx.lineTo(sepX,H); ctx.stroke(); ctx.setLineDash([]);
 }
 
+/* 7. PRESET MANAGER TAMPILAN HARDWARE MEMORY BANK */
 function renderPreset(){
-  let html = `<div class="panel"><h3>Load Preset</h3><div class="presetlist">`;
-  state.presets.forEach((p,i)=>{
-    html += `<button data-load="${i}"><span>${p}</span><span class="tag">SLOT ${i+1}</span></button>`;
+  const win = document.getElementById('content-preset');
+  
+  let cardsHtml = '<div class="presetlist">';
+  presetProfiles.forEach((p, i) => {
+    const isLoaded = (activePresetSlot === i);
+    cardsHtml += `
+      <div class="preset-card ${isLoaded ? 'active-slot' : ''}">
+        <div class="preset-slot-id">
+          <span class="slot-chip">BANK</span>
+          <span class="slot-num">0${i+1}</span>
+        </div>
+        <div class="preset-info">
+          <div class="preset-title">${p.name}</div>
+          <div class="preset-desc">${p.desc}</div>
+        </div>
+        <div class="preset-actions">
+          <button class="btn-action" data-edit="${i}" title="Edit Nama & Info">
+            <i data-lucide="edit-3" style="width:13px;height:13px;"></i>
+          </button>
+          <button class="btn-action btn-store" data-save="${i}" title="Simpan Settingan ke Slot Ini">
+            STORE
+          </button>
+          ${isLoaded 
+            ? `<span class="btn-action active-label">ACTIVE</span>` 
+            : `<button class="btn-action btn-recall" data-load="${i}">RECALL</button>`}
+        </div>
+      </div>`;
   });
-  html += `</div></div>
-  <div class="panel"><h3>Save Current Setting</h3><div class="save-row">`;
-  state.presets.forEach((p,i)=>{
-    html += `<button class="btn${i===0?' primary':''}" data-save="${i}">SLOT ${i+1}</button>`;
+  cardsHtml += '</div>';
+
+  win.innerHTML = `
+    <div class="panel">
+      <h3>Internal DSP Memory Banks (EEPROM)</h3>
+      ${cardsHtml}
+      <p class="hint">Tekan <b>RECALL</b> untuk memanggil preset, <b>STORE</b> untuk menyimpan settingan aktif ke slot, atau tombol <b>pensil</b> untuk mengubah nama preset sound system Anda.</p>
+    </div>`;
+
+  win.querySelectorAll('[data-load]').forEach(b => {
+    b.addEventListener('click', () => {
+      const slot = +b.dataset.load;
+      activePresetSlot = slot;
+      sendCmd(CMD.LOAD_PRESET, [slot]);
+      toast('Memuat: ' + presetProfiles[slot].name);
+      refreshStatusSoon();
+      fillPresetQuickSel();
+      render();
+    });
   });
-  html += `</div>
-    <p class="hint">Nama preset di atas masih placeholder (belum bisa diketik/tersimpan) — menyimpan konfigurasi lengkap channel aktif tetap berfungsi penuh.</p></div>`;
-  main.innerHTML = html;
-  main.querySelectorAll('[data-load]').forEach(b=>{
-    b.addEventListener('click', ()=>{ sendCmd(CMD.LOAD_PRESET,[+b.dataset.load]); toast('Memuat '+state.presets[+b.dataset.load]); refreshStatusSoon(); });
+
+  win.querySelectorAll('[data-save]').forEach(b => {
+    b.addEventListener('click', () => {
+      const slot = +b.dataset.save;
+      sendCmd(CMD.SAVE_PRESET, [slot]);
+      toast('Tersimpan ke Slot [0' + (slot+1) + '] ' + presetProfiles[slot].name);
+    });
   });
-  main.querySelectorAll('[data-save]').forEach(b=>{
-    b.addEventListener('click', ()=>{ sendCmd(CMD.SAVE_PRESET,[+b.dataset.save]); toast('Tersimpan ke slot '+(+b.dataset.save+1)); });
+
+  win.querySelectorAll('[data-edit]').forEach(b => {
+    b.addEventListener('click', () => {
+      openPresetEditModal(+b.dataset.edit);
+    });
   });
 }
 
-/* ---------------- PENGATURAN: PIN BLUETOOTH ---------------- */
+/* Modal Edit Preset Handler */
+let editingSlot = null;
+function openPresetEditModal(slotIndex) {
+  editingSlot = slotIndex;
+  const p = presetProfiles[slotIndex];
+  const modal = document.getElementById('presetModal');
+  const nameInp = document.getElementById('presetNameInp');
+  const descInp = document.getElementById('presetDescInp');
+
+  nameInp.value = p.name;
+  descInp.value = p.desc;
+  modal.classList.add('show');
+  setTimeout(() => nameInp.focus(), 50);
+
+  document.getElementById('presetModalCancel').onclick = () => {
+    modal.classList.remove('show');
+  };
+
+  document.getElementById('presetModalSave').onclick = () => {
+    const newName = nameInp.value.trim().toUpperCase();
+    if (!newName) { toast('Nama preset tidak boleh kosong'); return; }
+    presetProfiles[editingSlot].name = newName;
+    presetProfiles[editingSlot].desc = descInp.value.trim() || 'Custom Speaker Profile';
+    saveStoredPresets();
+    modal.classList.remove('show');
+    toast('Slot [0' + (editingSlot+1) + '] berhasil diperbarui');
+    render();
+  };
+}
+
+/* 8. PENGATURAN / SETUP */
 function renderSettings(){
+  const win = document.getElementById('content-settings');
   const savedPin = !!localStorage.getItem('dlms_pin');
-  main.innerHTML = `
-  <div class="panel"><h3>PIN Bluetooth</h3>
+  win.innerHTML = `
+  <div class="panel"><h3>PIN Keamanan Bluetooth</h3>
     <input class="txt" id="pinInp" type="password" inputmode="numeric" maxlength="6" placeholder="------" autocomplete="off">
     <div class="row2">
       <button class="btn primary" id="pinSend">KIRIM PIN</button>
       <button class="btn" id="pinForget" ${savedPin?'':'disabled'}>LUPAKAN PIN</button>
     </div>
-    <p class="hint">Status: ${connected ? (authed ? 'terhubung &amp; terbuka' : 'terhubung, TERKUNCI') : 'belum terhubung'}${savedPin?' &middot; PIN tersimpan di HP ini':''}.
-    PIN, nama &amp; sandi WiFi, nama Bluetooth, dan ganti logo diatur lewat halaman WiFi alat: menu GLOBAL &rarr; WIFI / LOGO, nyalakan WiFi, lalu buka 192.168.4.1.</p>
+    <p class="hint">Status: ${connected ? (authed ? 'Terhubung &amp; Terbuka' : 'Terhubung, TERKUNCI') : 'Belum Terhubung'}${savedPin?' &middot; PIN tersimpan':''}.<br>
+    Pengaturan WiFi AP, nama BLE, dan ganti logo dapat diakses melalui web server PERANGKAT di 192.168.4.1 saat mode WiFi aktif.</p>
   </div>`;
-  document.getElementById('pinSend').onclick=async()=>{
-    const v=document.getElementById('pinInp').value.trim();
+  win.querySelector('#pinSend').onclick=async()=>{
+    const v=win.querySelector('#pinInp').value.trim();
     if(!/^\d{6}$/.test(v)){ toast('PIN harus 6 angka'); return; }
-    if(!connected){ localStorage.setItem('dlms_pin', v); toast('PIN disimpan, dipakai saat connect'); renderSettings(); return; }
+    if(!connected){ localStorage.setItem('dlms_pin', v); toast('PIN disimpan di HP'); renderSettings(); return; }
     const ok = await authenticate(v);
-    if(ok){ localStorage.setItem('dlms_pin', v); authed=true; updateConnUI(); toast('PIN benar, terbuka'); sendCmd(CMD.GET_ALL_STATUS,[]); renderSettings(); }
+    if(ok){ localStorage.setItem('dlms_pin', v); authed=true; updateConnUI(); toast('PIN benar, akses dibuka'); sendCmd(CMD.GET_ALL_STATUS,[]); renderSettings(); }
     else toast('PIN salah atau terkunci 30 detik');
   };
-  document.getElementById('pinForget').onclick=()=>{ localStorage.removeItem('dlms_pin'); toast('PIN dihapus dari HP'); renderSettings(); };
+  win.querySelector('#pinForget').onclick=()=>{ localStorage.removeItem('dlms_pin'); toast('PIN dihapus'); renderSettings(); };
 }
 
+/* ============================================================
+   LOGIKA AUTO-HIDE PINTEREST TAB + TOMBOL VIRTUAL TOGGLE
+   ============================================================ */
+const mainWorkspace = document.getElementById('main');
+const tabsNav = document.getElementById('tabs');
+const virtualBtn = document.getElementById('tabToggleBtn');
+
+let lastScrollPosition = 0;
+const scrollTolerance = 15;
+
+mainWorkspace.addEventListener('scroll', () => {
+  const currentScroll = mainWorkspace.scrollTop;
+
+  if (currentScroll <= 10) {
+    tabsNav.classList.remove('hidden');
+    virtualBtn.classList.remove('show');
+    lastScrollPosition = currentScroll;
+    return;
+  }
+
+  if (currentScroll > lastScrollPosition + scrollTolerance) {
+    tabsNav.classList.add('hidden');
+    virtualBtn.classList.add('show');
+  } else if (currentScroll < lastScrollPosition - scrollTolerance) {
+    tabsNav.classList.remove('hidden');
+    virtualBtn.classList.remove('show');
+  }
+
+  lastScrollPosition = currentScroll;
+}, { passive: true });
+
+virtualBtn.addEventListener('click', () => {
+  const isHidden = tabsNav.classList.contains('hidden');
+  if (isHidden) {
+    tabsNav.classList.remove('hidden');
+    virtualBtn.classList.remove('show');
+  } else {
+    tabsNav.classList.add('hidden');
+    virtualBtn.classList.add('show');
+  }
+});
+
+/* ---------------- INITIALIZATION ---------------- */
 fillPresetQuickSel();
 renderOverviewCards();
 render();
