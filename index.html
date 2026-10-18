@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>ELKASARI DSP 2_IN 4_OUT</title>
+<title>ELIKASARI DSP S3</title>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0b0c10">
-<link rel="icon" href="./Edsp-192.png">
-<link rel="apple-touch-icon" href="./Edsp-192.png">
+<link rel="icon" href="./dlms240-192.png">
+<link rel="apple-touch-icon" href="./dlms240-192.png">
 
 <!-- CDN Lucide Icons -->
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -57,11 +57,12 @@
     box-shadow: 0 0 30px rgba(0,0,0,0.8);
   }
 
-  /* KUNCI GESTUR AGAR LAYAR TIDAK SCROLL SAAT GESER SLIDER */
+  /* Cegah scroll layar saat slider atau canvas disentuh */
   input[type=range], 
   input.vslider, 
   .fadertrack,
   #eqCanvas,
+  #xoverCanvas,
   #compCanvas {
     touch-action: none;
   }
@@ -98,7 +99,7 @@
   .connbtn.on { color: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 10px var(--cyan-glow); }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--textdim); }
   .connbtn.on .dot { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
-
+  
   .presetbar { display: flex; align-items: center; gap: 6px; }
   .presetbar select {
     flex: 1; 
@@ -150,10 +151,9 @@
     border-color: #00e5ff; 
     font-weight: 900;
     box-shadow: 0 0 10px var(--cyan-glow), inset 0 1px 0 rgba(255,255,255,0.4);
-    text-shadow: 0 1px 0 rgba(255,255,255,0.3);
   }
 
-  /* ---------- MAIN WORKSPACE (SCROLLABLE) ---------- */
+  /* ---------- MAIN WORKSPACE ---------- */
   #main {
     flex: 1;
     overflow-y: auto;
@@ -163,7 +163,7 @@
   #main::-webkit-scrollbar { width: 4px; }
   #main::-webkit-scrollbar-thumb { background: var(--line-light); border-radius: 2px; }
 
-  /* ---------- OVERVIEW METER BRIDGE (IKUT TENGGELAM SAAT SCROLL) ---------- */
+  /* OVERVIEW METER BRIDGE */
   .overview { 
     padding: 2px 2px 10px; 
     margin-bottom: 8px; 
@@ -236,7 +236,6 @@
     color: var(--amber); 
     font-family: var(--mono);
     margin-bottom: 4px; 
-    text-shadow: 0 0 6px rgba(255, 201, 74, 0.3);
   }
   .iocard .badges { display: flex; gap: 3px; margin-bottom: 5px; }
   .badge { 
@@ -276,7 +275,6 @@
     width: 4%; 
     border-radius: 1px; 
     background: linear-gradient(90deg, #3ee89a 0%, #ffc94a 72%, #ff3366 92%); 
-    box-shadow: 0 0 6px rgba(62, 232, 154, 0.4);
     transition: width .1s linear; 
   }
 
@@ -297,7 +295,7 @@
     font-weight: 700; text-transform: uppercase;
   }
 
-  /* ---------- BUTTONS PRO STYLE ---------- */
+  /* BUTTONS PRO */
   .chsel { 
     display: flex; 
     gap: 6px; 
@@ -366,36 +364,79 @@
     box-shadow: 0 0 12px rgba(62, 232, 154, 0.35), inset 0 0 8px rgba(62, 232, 154, 0.18);
   }
   .toggle.route-on::after {
-    content: '';
-    position: absolute;
-    top: 5px; right: 6px;
-    width: 4px; height: 4px;
-    border-radius: 50%;
-    background: var(--mint);
-    box-shadow: 0 0 6px var(--mint);
+    content: ''; position: absolute; top: 5px; right: 6px; width: 4px; height: 4px;
+    border-radius: 50%; background: var(--mint); box-shadow: 0 0 6px var(--mint);
   }
   .toggle.mute-on { 
     background: linear-gradient(180deg, #3d0f1c 0%, #1c050c 100%); 
-    border-color: var(--red); 
-    color: var(--red); 
+    border-color: var(--red); color: var(--red); 
     text-shadow: 0 0 8px rgba(255, 51, 102, 0.6);
     box-shadow: 0 0 12px rgba(255, 51, 102, 0.4), inset 0 0 8px rgba(255, 51, 102, 0.2);
   }
   .toggle.mute-on::after {
-    content: '';
-    position: absolute;
-    top: 5px; right: 6px;
-    width: 4px; height: 4px;
-    border-radius: 50%;
-    background: var(--red);
-    box-shadow: 0 0 6px var(--red);
+    content: ''; position: absolute; top: 5px; right: 6px; width: 4px; height: 4px;
+    border-radius: 50%; background: var(--red); box-shadow: 0 0 6px var(--red);
   }
+
+  /* EQ TOOLBAR & INTERACTIVE GRAPH */
+  .eq-toolbar {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+  .eq-tool-btn {
+    padding: 7px 2px;
+    border-radius: 6px;
+    font-size: 9px;
+    font-weight: 800;
+    font-family: var(--mono);
+    cursor: pointer;
+    border: 1px solid #1f2d42;
+    background: linear-gradient(180deg, #162030 0%, #0c121d 100%);
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    transition: all .12s ease;
+  }
+  .eq-tool-btn:active { transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); }
+  .eq-tool-btn.bypass-active {
+    background: linear-gradient(180deg, #3d101d 0%, #1c050c 100%);
+    border-color: var(--red);
+    color: var(--red);
+    box-shadow: 0 0 10px rgba(255, 51, 102, 0.5);
+  }
+  .eq-tool-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .graph-hint {
+    font-size: 8px;
+    color: var(--cyan);
+    letter-spacing: .06em;
+    font-weight: 800;
+    text-align: center;
+    margin-top: 6px;
+    text-shadow: 0 0 6px rgba(0, 229, 255, 0.4);
+  }
+
+  .step-group { display: flex; align-items: center; gap: 6px; }
+  .step-btn {
+    width: 26px; height: 22px; border-radius: 4px;
+    background: linear-gradient(180deg, #1e2a3c 0%, #0e1622 100%);
+    border: 1px solid #283950; color: var(--cyan);
+    font-size: 13px; font-weight: 900; font-family: var(--mono);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5); transition: all .1s ease;
+  }
+  .step-btn:active { transform: translateY(1px); background: var(--cyan); color: #04090e; }
 
   .bandrow { 
     display: grid; 
     grid-template-columns: repeat(9, 1fr); 
     gap: 4px; 
-    margin: 12px 0; 
+    margin: 10px 0; 
     background: #060910;
     padding: 4px;
     border-radius: 8px;
@@ -403,208 +444,117 @@
     box-shadow: inset 0 1px 4px rgba(0,0,0,0.8);
   }
   .bandrow button {
-    aspect-ratio: 1; 
-    border-radius: 5px; 
+    aspect-ratio: 1; border-radius: 5px; 
     background: linear-gradient(180deg, #151d2a 0%, #0b1018 100%); 
-    border: 1px solid #1c2738;
-    color: #64748b; 
-    font-size: 10px; 
-    font-weight: 800; 
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
-    transition: all .12s ease;
+    border: 1px solid #1c2738; color: #64748b; font-size: 10px; font-weight: 800; 
+    cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.5); transition: all .12s ease;
   }
   .bandrow button:active { transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); }
   .bandrow button.active { 
     background: linear-gradient(180deg, #00e5ff 0%, #009cb8 100%); 
-    color: #03070d; 
-    border-color: #00e5ff; 
-    box-shadow: 0 0 10px var(--cyan-glow), inset 0 1px 0 rgba(255,255,255,0.4); 
-    font-weight: 900;
+    color: #03070d; border-color: #00e5ff; 
+    box-shadow: 0 0 10px var(--cyan-glow); font-weight: 900;
   }
 
-  /* ---------- FADER VERTIKAL (MIXER STRIP) ---------- */
+  /* FADER VERTIKAL */
   .faderstrip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 6px 0; }
   .fadercol { display: flex; flex-direction: column; align-items: center; }
   .fadercol .flabel { font-size: 9px; letter-spacing: .1em; color: var(--mint); font-weight: 700; margin-bottom: 8px; }
   .fadercol .fval { font-size: 11px; color: var(--amber); font-weight: 700; margin-top: 8px; font-family: var(--mono); }
 
   .fadertrack {
-    position: relative; 
-    width: 44px; 
-    height: 165px; 
-    background: #080c14; 
-    border: 1px solid #1a2436; 
-    border-radius: 8px; 
-    display: flex; 
-    justify-content: center; 
-    align-items: center;
-    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.7);
+    position: relative; width: 44px; height: 165px; background: #080c14; 
+    border: 1px solid #1a2436; border-radius: 8px; display: flex; 
+    justify-content: center; align-items: center; box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.7);
   }
   .fadertrack::before { 
-    content: ''; 
-    position: absolute; 
-    top: 12px; bottom: 12px; left: 50%;
-    transform: translateX(-50%); 
-    width: 4px; 
-    background: #020408; 
-    border-left: 1px solid #000;
-    border-right: 1px solid #1e2c40;
-    border-radius: 2px;
-    box-shadow: inset 0 0 3px #000;
-    pointer-events: none;
-    z-index: 0;
+    content: ''; position: absolute; top: 12px; bottom: 12px; left: 50%;
+    transform: translateX(-50%); width: 4px; background: #020408; 
+    border-left: 1px solid #000; border-right: 1px solid #1e2c40; border-radius: 2px;
+    pointer-events: none; z-index: 0;
   }
   .fadertrack::after {
-    content: '';
-    position: absolute;
-    top: 18px; bottom: 18px; left: 4px; right: 4px;
-    background: repeating-linear-gradient(
-      to bottom,
-      transparent,
-      transparent 18px,
-      rgba(112, 132, 153, 0.25) 18px,
-      rgba(112, 132, 153, 0.25) 20px
-    );
-    pointer-events: none;
-    z-index: 0;
+    content: ''; position: absolute; top: 18px; bottom: 18px; left: 4px; right: 4px;
+    background: repeating-linear-gradient(to bottom, transparent, transparent 18px, rgba(112, 132, 153, 0.25) 18px, rgba(112, 132, 153, 0.25) 20px);
+    pointer-events: none; z-index: 0;
   }
   input.vslider {
     -webkit-appearance: none; appearance: none; 
     writing-mode: vertical-lr; direction: rtl;
-    width: 38px; height: 148px; 
-    background: transparent; outline: none; 
+    width: 38px; height: 148px; background: transparent; outline: none; 
     margin: 0; padding: 0; z-index: 2; display: block; cursor: pointer;
   }
   input.vslider::-webkit-slider-runnable-track { width: 100%; background: transparent; border: none; }
   input.vslider::-webkit-slider-thumb {
-    -webkit-appearance: none; 
-    width: 38px; height: 22px; border-radius: 4px;
+    -webkit-appearance: none; width: 38px; height: 22px; border-radius: 4px;
     background: linear-gradient(180deg, #24324a 0%, #121927 44%, #00e5ff 45%, #00e5ff 55%, #121927 56%, #24324a 100%);
-    border: 1.5px solid #06090e; 
-    box-shadow: 0 0 10px rgba(0, 229, 255, 0.5), 0 4px 8px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.2); 
-    cursor: grab;
+    border: 1.5px solid #06090e; box-shadow: 0 0 10px rgba(0, 229, 255, 0.5), 0 4px 8px rgba(0, 0, 0, 0.8); cursor: grab;
   }
-  input.vslider::-webkit-slider-thumb:active {
-    cursor: grabbing;
-    box-shadow: 0 0 14px var(--cyan), 0 2px 4px rgba(0, 0, 0, 0.9);
-  }
-  input.vslider::-moz-range-track { width: 100%; background: transparent; }
-  input.vslider::-moz-range-thumb {
-    width: 38px; height: 22px; border-radius: 4px;
-    background: linear-gradient(180deg, #24324a 0%, #121927 44%, #00e5ff 45%, #00e5ff 55%, #121927 56%, #24324a 100%);
-    border: 1.5px solid #06090e;
-    box-shadow: 0 0 10px rgba(0, 229, 255, 0.5), 0 4px 8px rgba(0, 0, 0, 0.8);
-    cursor: grab;
-  }
+  input.vslider::-webkit-slider-thumb:active { cursor: grabbing; box-shadow: 0 0 14px var(--cyan); }
 
-  /* ---------- SLIDER HORIZONTAL PRO ---------- */
-  .sliderow { padding: 10px 2px 14px; }
-  .sliderow .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  /* SLIDER HORIZONTAL */
+  .sliderow { padding: 8px 2px 10px; }
+  .sliderow .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
   input[type=range]:not(.vslider) {
-    -webkit-appearance: none; appearance: none;
-    width: 100%; height: 8px; border-radius: 4px; 
-    background: #06090f; border: 1px solid #1a2536;
-    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8);
-    outline: none; margin: 8px 0;
+    -webkit-appearance: none; appearance: none; width: 100%; height: 8px; border-radius: 4px; 
+    background: #06090f; border: 1px solid #1a2536; box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8);
+    outline: none; margin: 6px 0;
   }
-  input[type=range]:not(.vslider)::-webkit-slider-runnable-track { height: 8px; background: transparent; border: none; }
+  input[type=range]:not(.vslider)::-webkit-slider-runnable-track { height: 8px; background: transparent; }
   input[type=range]:not(.vslider)::-webkit-slider-thumb {
-    -webkit-appearance: none; 
-    width: 24px; height: 30px; margin-top: -12px; border-radius: 4px;
+    -webkit-appearance: none; width: 24px; height: 30px; margin-top: -12px; border-radius: 4px;
     background: linear-gradient(90deg, #24324a 0%, #121927 43%, #00e5ff 45%, #00e5ff 55%, #121927 57%, #24324a 100%);
-    border: 1.5px solid #06090e; 
-    box-shadow: 0 0 10px rgba(0, 229, 255, 0.45), 0 4px 8px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.2); 
-    cursor: grab;
+    border: 1.5px solid #06090e; box-shadow: 0 0 10px rgba(0, 229, 255, 0.45), 0 4px 8px rgba(0, 0, 0, 0.8); cursor: grab;
   }
-  input[type=range]:not(.vslider)::-webkit-slider-thumb:active {
-    cursor: grabbing; transform: scale(1.06); box-shadow: 0 0 14px var(--cyan), 0 2px 4px rgba(0, 0, 0, 0.9);
-  }
-  input[type=range]:not(.vslider)::-moz-range-track {
-    height: 8px; border-radius: 4px; background: #06090f; border: 1px solid #1a2536; box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8);
-  }
-  input[type=range]:not(.vslider)::-moz-range-thumb {
-    width: 24px; height: 30px; border-radius: 4px;
-    background: linear-gradient(90deg, #24324a 0%, #121927 43%, #00e5ff 45%, #00e5ff 55%, #121927 57%, #24324a 100%);
-    border: 1.5px solid #06090e;
-    box-shadow: 0 0 10px rgba(0, 229, 255, 0.45), 0 4px 8px rgba(0, 0, 0, 0.8);
-    cursor: grab;
-  }
+  input[type=range]:not(.vslider)::-webkit-slider-thumb:active { cursor: grabbing; transform: scale(1.06); box-shadow: 0 0 14px var(--cyan); }
 
-  /* ---------- PRESET MEMORY BANK CARDS ---------- */
+  /* PRESET MEMORY CARDS */
   .presetlist { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
   .preset-card {
     background: linear-gradient(180deg, #151e2b 0%, #0b111a 100%);
-    border: 1px solid #1c2738;
-    border-radius: 8px;
-    padding: 8px 10px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06);
-    transition: all .15s ease;
+    border: 1px solid #1c2738; border-radius: 8px; padding: 8px 10px;
+    display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.6);
     position: relative;
   }
-  .preset-card:hover { border-color: #2c3e58; }
   .preset-card.active-slot {
     border-color: var(--cyan);
     background: linear-gradient(180deg, #132435 0%, #08141f 100%);
     box-shadow: 0 0 12px rgba(0, 229, 255, 0.3), inset 0 0 6px rgba(0, 229, 255, 0.15);
   }
   .preset-card.active-slot::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 15%; bottom: 15%;
-    width: 3px;
-    background: var(--cyan);
-    box-shadow: 0 0 8px var(--cyan);
-    border-radius: 0 2px 2px 0;
+    content: ''; position: absolute; left: 0; top: 15%; bottom: 15%; width: 3px;
+    background: var(--cyan); box-shadow: 0 0 8px var(--cyan); border-radius: 0 2px 2px 0;
   }
   .preset-slot-id {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: #060910;
-    border: 1px solid #162030;
-    border-radius: 6px;
-    padding: 4px 6px;
-    min-width: 34px;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: #060910; border: 1px solid #162030; border-radius: 6px; padding: 4px 6px; min-width: 34px;
   }
-  .preset-slot-id .slot-chip { font-size: 6.5px; font-weight: 900; color: var(--textdim); letter-spacing: .08em; }
-  .preset-slot-id .slot-num { font-size: 13px; font-weight: 900; color: var(--cyan); font-family: var(--mono); text-shadow: 0 0 6px var(--cyan-glow); line-height: 1.1; }
+  .preset-slot-id .slot-chip { font-size: 6.5px; font-weight: 900; color: var(--textdim); }
+  .preset-slot-id .slot-num { font-size: 13px; font-weight: 900; color: var(--cyan); font-family: var(--mono); line-height: 1.1; }
   .preset-info { flex: 1; min-width: 0; }
-  .preset-title { font-size: 11px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: .04em; margin-bottom: 2px; }
+  .preset-title { font-size: 11px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .preset-card.active-slot .preset-title { color: #ffffff; text-shadow: 0 0 6px rgba(255,255,255,0.4); }
-  .preset-desc { font-size: 8.5px; color: var(--textdim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: none; letter-spacing: 0; }
+  .preset-desc { font-size: 8.5px; color: var(--textdim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: none; }
   .preset-actions { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
   .btn-action {
     padding: 7px 9px; border-radius: 5px; font-size: 9.5px; font-weight: 800; font-family: var(--mono);
     cursor: pointer; border: 1px solid #1c2738; background: linear-gradient(180deg, #182232 0%, #0d131e 100%);
-    color: var(--textdim); box-shadow: 0 2px 4px rgba(0,0,0,0.5); transition: all .12s ease;
-    display: flex; align-items: center; justify-content: center;
+    color: var(--textdim); box-shadow: 0 2px 4px rgba(0,0,0,0.5);
   }
-  .btn-action:active { transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); }
-  .btn-action.btn-recall {
-    color: var(--cyan); border-color: rgba(0, 229, 255, 0.4);
-    background: linear-gradient(180deg, rgba(0, 229, 255, 0.12) 0%, #0b141f 100%);
-  }
-  .btn-action.btn-recall:hover { box-shadow: 0 0 8px var(--cyan-glow); }
+  .btn-action:active { transform: translateY(1px); }
+  .btn-action.btn-recall { color: var(--cyan); border-color: rgba(0, 229, 255, 0.4); }
   .btn-action.active-label {
     background: rgba(62, 232, 154, 0.15); border-color: var(--mint);
     color: var(--mint); box-shadow: 0 0 8px rgba(62, 232, 154, 0.4); pointer-events: none;
   }
   .btn-action.btn-store { color: var(--amber); border-color: rgba(255, 201, 74, 0.4); }
 
-  /* ---------- CANVASES & RTA ---------- */
-  .graphwrap { background: #070a10; border-radius: 8px; border: 1px solid var(--line); padding: 8px; }
+  /* GRAPH WRAPPER */
+  .graphwrap { background: #070a10; border-radius: 8px; border: 1px solid var(--line); padding: 8px; position: relative; }
   .legend { display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 4px; }
   .legend span { font-size: 8px; color: var(--textdim); display: flex; align-items: center; gap: 4px; }
   .legend i { width: 7px; height: 7px; border-radius: 2px; display: inline-block; }
   canvas { width: 100%; display: block; }
-  .rtalabels { display: flex; gap: 2px; margin-top: 4px; }
-  .rtalabels span { flex: 1; text-align: center; font-size: 8px; color: var(--textdim); font-weight: 700; }
 
   /* COMPRESSOR */
   .complayout { display: flex; gap: 8px; margin-bottom: 8px; }
@@ -617,10 +567,10 @@
   .compactive { display: inline-block; font-size: 8px; font-weight: 700; padding: 3px 8px; border-radius: 12px; background: rgba(62, 232, 154, 0.15); color: var(--mint); float: right; }
   .compactive.off { background: #16202c; color: var(--textdim); }
 
-  /* ---------- BOTTOM TABS (ALA PINTEREST) ---------- */
+  /* BOTTOM NAVIGATION (7 TABS - RTA PINDAH KE DALAM EQ) */
   #tabs {
     position: absolute; bottom: 0; left: 0; right: 0; width: 100%;
-    display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr);
+    display: grid; grid-template-columns: repeat(4, 1fr);
     gap: 4px; padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 6px));
     background: rgba(20, 25, 35, 0.95); backdrop-filter: blur(10px);
     border-top: 1px solid var(--line); z-index: 50; box-shadow: 0 -8px 24px rgba(0,0,0,0.7);
@@ -639,7 +589,7 @@
   }
   #tabs button.active svg { transform: scale(1.1); stroke: var(--cyan); filter: drop-shadow(0 0 6px var(--cyan)); }
 
-  /* TOMBOL VIRTUAL TOGGLE */
+  /* VIRTUAL FLOATING BUTTON */
   #tabToggleBtn {
     position: absolute; bottom: 16px; right: 16px; width: 44px; height: 44px; border-radius: 50%;
     background: linear-gradient(135deg, #182538 0%, #0a111a 100%);
@@ -652,17 +602,13 @@
   #tabToggleBtn:active { transform: scale(0.92); }
   #tabToggleBtn svg { width: 20px; height: 20px; stroke-width: 2.2; filter: drop-shadow(0 0 4px var(--cyan)); }
 
-  /* ---------- TOAST & MODAL ---------- */
+  /* TOAST & MODAL */
   #toast {
-    position: fixed; top: 110px; right: 12px; left: auto; transform: translateX(130%);
-background: rgba(255, 201, 74, 0.25); /* Kuning transparan ~25-30% */
-  backdrop-filter: blur(8px);           /* Efek kaca buram di belakangnya */
-  border: 1px solid var(--red);          /* Garis tepi kuning tegas */
-  color: #ffc94a;                       /* Teks kuning menyala */
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7), 0 0 12px rgba(255, 201, 74, 0.35); /* Glow LED kuning */
- padding: 8px 14px; border-radius: 8px; font-size: 10px; font-weight: 700;
+    position: fixed; top: 68px; right: 12px; left: auto; transform: translateX(130%);
+    background: rgba(20, 27, 41, 0.95); backdrop-filter: blur(6px); border: 1px solid var(--cyan);
+    color: var(--cyan); padding: 8px 14px; border-radius: 8px; font-size: 10px; font-weight: 700;
     letter-spacing: .06em; transition: transform .25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    z-index: 1000;  pointer-events: none; max-width: 80%;
+    z-index: 1000; box-shadow: 0 6px 20px rgba(0,0,0,.7); pointer-events: none; max-width: 80%;
   }
   #toast.show { transform: translateX(0); }
 
@@ -670,12 +616,12 @@ background: rgba(255, 201, 74, 0.25); /* Kuning transparan ~25-30% */
     padding: 10px 6px; border-radius: 6px; border: 1px solid #1e2a3c;
     background: linear-gradient(180deg, #16202e 0%, #0c121a 100%); color: var(--text);
     font-size: 10px; font-weight: 800; cursor: pointer; text-align: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06); transition: all .12s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5); transition: all .12s ease;
   }
-  .btn:active { transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); }
+  .btn:active { transform: translateY(1px); }
   .btn.primary {
     background: linear-gradient(180deg, #00e5ff 0%, #009cb8 100%); color: #03070d;
-    border-color: #00e5ff; font-weight: 900; box-shadow: 0 0 10px var(--cyan-glow), inset 0 1px 0 rgba(255,255,255,0.4);
+    border-color: #00e5ff; font-weight: 900; box-shadow: 0 0 10px var(--cyan-glow);
   }
 
   input.txt {
@@ -702,7 +648,7 @@ background: rgba(255, 201, 74, 0.25); /* Kuning transparan ~25-30% */
 
   <!-- TOP HEADER -->
   <header>
-<div class="brandrow">
+      <div class="brandrow">
       <div class="brand">
         <!-- GANTI DENGAN LOGO GAMBAR -->
         <img src="./elkasariDSP.png" alt="ELIKASARI DSP S3" class="brand-logo">
@@ -713,6 +659,7 @@ background: rgba(255, 201, 74, 0.25); /* Kuning transparan ~25-30% */
       </button>
     </div>
 
+
     <div class="presetbar">
       <select id="presetQuickSel"></select>
       <button id="quickLoadBtn">LOAD</button>
@@ -722,7 +669,7 @@ background: rgba(255, 201, 74, 0.25); /* Kuning transparan ~25-30% */
 
   <!-- MAIN SCROLLABLE WORKSPACE -->
   <main id="main">
-    <!-- OVERVIEW METER BRIDGE (IKUT BERGULIR/TENGGELAM) -->
+    <!-- OVERVIEW METER BRIDGE -->
     <div class="overview">
       <div class="ovlabel">INPUT CHANNELS</div>
       <div class="cardgrid inputs" id="inCards"></div>
@@ -730,18 +677,17 @@ background: rgba(255, 201, 74, 0.25); /* Kuning transparan ~25-30% */
       <div class="cardgrid outputs" id="outCards"></div>
     </div>
 
-    <!-- 8 KONTEN TAB WINDOW -->
+    <!-- 7 KONTEN TAB WINDOW -->
     <div class="tab-window active" id="content-matrix"></div>
     <div class="tab-window" id="content-xover"></div>
     <div class="tab-window" id="content-eq"></div>
     <div class="tab-window" id="content-delay"></div>
     <div class="tab-window" id="content-comp"></div>
-    <div class="tab-window" id="content-rta"></div>
     <div class="tab-window" id="content-preset"></div>
     <div class="tab-window" id="content-settings"></div>
   </main>
 
-  <!-- BOTTOM NAVIGATION (ALA PINTEREST AUTO-HIDE) -->
+  <!-- BOTTOM NAVIGATION (7 TABS) -->
   <nav id="tabs">
     <button data-tab="matrix" class="active" title="Matrix">
       <i data-lucide="grid-3x3"></i>
@@ -751,9 +697,9 @@ background: rgba(255, 201, 74, 0.25); /* Kuning transparan ~25-30% */
       <i data-lucide="split"></i>
       <span>X-Over</span>
     </button>
-    <button data-tab="eq" title="Equalizer">
+    <button data-tab="eq" title="Equalizer + RTA">
       <i data-lucide="sliders-horizontal"></i>
-      <span>EQ</span>
+      <span>EQ+RTA</span>
     </button>
     <button data-tab="delay" title="Delay">
       <i data-lucide="hourglass"></i>
@@ -762,10 +708,6 @@ background: rgba(255, 201, 74, 0.25); /* Kuning transparan ~25-30% */
     <button data-tab="comp" title="Compressor">
       <i data-lucide="minimize-2"></i>
       <span>Comp</span>
-    </button>
-    <button data-tab="rta" title="Level Meter">
-      <i data-lucide="bar-chart-3"></i>
-      <span>RTA</span>
     </button>
     <button data-tab="preset" title="Preset">
       <i data-lucide="save"></i>
@@ -777,7 +719,7 @@ background: rgba(255, 201, 74, 0.25); /* Kuning transparan ~25-30% */
     </button>
   </nav>
 
-  <!-- TOMBOL VIRTUAL MENGAMBANG (MUNCUL SAAT TAB TERSEMBUNYI) -->
+  <!-- TOMBOL VIRTUAL TOGGLE -->
   <button id="tabToggleBtn" title="Buka Menu Tab">
     <i data-lucide="layout-grid"></i>
   </button>
@@ -815,7 +757,7 @@ background: rgba(255, 201, 74, 0.25); /* Kuning transparan ~25-30% */
 
 <script>
 /* ============================================================
-   BLE CONTROL PROTOCOL & DSP CONSTANTS
+   BLE PROTOCOL & CONSTANTS
    ============================================================ */
 const SERVICE_UUID   = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
 const CHAR_CONTROL    = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
@@ -834,12 +776,27 @@ let activeCh = 0;
 let activeBand = 0;
 let currentTab = 'matrix';
 
+// EQ PRO GLOBAL STATES
+let eqClipboard = null;
+let eqBypassState = [false, false, false, false];
+let eqBypassBackup = [null, null, null, null];
+let isDraggingNode = false;
+let draggedBandIdx = null;
+
 const FREQ_ISO = [20,22,25,28,32,40,50,63,80,100,125,160,200,250,315,400,500,630,800,1000,1250,1600,2000,2500,3150,4000,5000,6300,8000,10000,12500,16000,20000];
-const METER_LABELS = ['IN-L','IN-R','OUT1','OUT2','OUT3','OUT4'];
 const OUT_NAMES = ['OUT 1', 'OUT 2', 'OUT 3', 'OUT 4'];
 
 /* ============================================================
-   PRO AUDIO HARDWARE PRESET PROFILES (DENGAN LOCALSTORAGE)
+   RTA FULL-BAND ENGINE (PRE & POST EQ DUAL LAYER)
+   ============================================================ */
+let rtaMode = 'BOTH'; // 'BOTH', 'PRE', 'POST', 'OFF'
+const NUM_BANDS = FREQ_ISO.length;
+let rtaPreDb = new Array(NUM_BANDS).fill(-60);
+let rtaPostDb = new Array(NUM_BANDS).fill(-60);
+let rtaPreTarget = new Array(NUM_BANDS).fill(-60);
+
+/* ============================================================
+   PRESET PROFILES (LOCAL STORAGE)
    ============================================================ */
 const DEFAULT_PRESET_PROFILES = [
   { name: 'FLAT / BYPASS (FOH)', desc: 'Stereo Linear Fullrange (20Hz - 20kHz)' },
@@ -860,7 +817,6 @@ function getStoredPresets() {
 let presetProfiles = getStoredPresets();
 let activePresetSlot = 0;
 
-// STATE OBJEK DSP (Didefinisikan setelah presetProfiles siap)
 const state = {
   route:[0,1,2,2], gain:[0,0,0,0], mute:[false,false,false,false,false,false],
   xoverHpf:[20,20,20,20], xoverLpf:[20000,20000,20000,20000],
@@ -878,7 +834,7 @@ function saveStoredPresets() {
   fillPresetQuickSel();
 }
 
-/* ---------------- BLE ENGINE & QUEUE ---------------- */
+/* ---------------- BLE ENGINE ---------------- */
 const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
 const pinAscii = (pin)=>Array.from(pin).map(c=>c.charCodeAt(0));
 
@@ -920,7 +876,7 @@ async function connectBLE(){
   if(!navigator.bluetooth){ toast('Web Bluetooth tidak didukung — gunakan Chrome Android'); return; }
   try{
     device = await navigator.bluetooth.requestDevice({
-      filters:[{ services:[SERVICE_UUID] }, { namePrefix:'DLMS' }],
+filters:[{ services:[SERVICE_UUID] }, { namePrefix:'EDSP' }, { namePrefix:'DLMS' }],
       optionalServices:[SERVICE_UUID]
     });
     device.addEventListener('gattserverdisconnected', onDisconnected);
@@ -949,7 +905,7 @@ async function connectBLE(){
     if(saved && hasStatusChar) await writeRaw(controlChar,[CMD_AUTH, ...pinAscii(saved)]);
     let ok = hasStatusChar ? await probeAccess() : true;
     let msg = 'Alat ini dilindungi PIN Bluetooth. Masukkan 6 angka PIN.';
-    if(saved && !ok) msg = 'PIN tersimpan salah atau alat terkunci 30 detik. Masukkan PIN lagi.';
+    if(saved && !ok) msg = 'PIN tersimpan salah atau terkunci 30 detik. Masukkan PIN lagi.';
     while(!ok){
       const pin = await askPin(msg);
       if(pin===null || !connected) break;
@@ -959,14 +915,14 @@ async function connectBLE(){
     }
     authed = ok;
     updateConnUI();
-    toast(authed ? 'Terhubung ke PERANGKAT' : 'Terhubung, tapi terkunci PIN');
+    toast(authed ? 'Terhubung ke board' : 'Terhubung, tapi terkunci PIN');
     if(authed) sendCmd(CMD.GET_ALL_STATUS, []);
   }catch(e){
     toast('Gagal connect: ' + e.message);
   }
 }
 
-function onDisconnected(){ connected=false; authed=false; sendQ.clear(); updateConnUI(); toast('Terputus dari PERANGKAT'); }
+function onDisconnected(){ connected=false; authed=false; sendQ.clear(); updateConnUI(); toast('Terputus dari board'); }
 function updateConnUI(){
   const btn=document.getElementById('connBtn');
   const lbl=document.getElementById('connLabel');
@@ -987,7 +943,7 @@ async function flushSendQ(){
   sendBusy = false;
 }
 function enqueue(key, cmd, payloadArr){
-  if(!connected || !controlChar){ toast('Belum terhubung ke PERANGKAT'); return; }
+  if(!connected || !controlChar){ toast('Belum terhubung ke board'); return; }
   if(!authed){ toast('Alat terkunci PIN — buka tab SETUP'); return; }
   sendQ.set(key, [cmd, ...payloadArr]);
   if(!sendBusy) flushSendQ();
@@ -1000,7 +956,44 @@ function u16le(v){ const b=new ArrayBuffer(2); new DataView(b).setUint16(0,v,tru
 function onStatusNotify(e){
   statusSeen = true;
   const dv = e.target.value;
-  if(dv && dv.byteLength >= 29){
+  if(!dv) return;
+
+  // 1. JIKA MENERIMA PAKET PEQ CHANNEL (47 BYTE)
+  if(dv.byteLength === 47 && dv.getUint8(0) === 0x0C){
+    const ch = dv.getUint8(1);
+    if(ch < 4){
+      let p = 2;
+      for(let b = 0; b < 9; b++){
+        state.peqFreqIdx[ch][b] = dv.getUint8(p++);
+        state.peqGain[ch][b]    = dv.getInt16(p, true); p += 2;
+        state.peqQ[ch][b]       = dv.getUint16(p, true); p += 2;
+      }
+      // Jika channel yang diterima adalah channel yang sedang dibuka di layar EQ, gambar ulang kurvanya!
+      if(currentTab === 'eq' && ch === activeCh){
+        drawEqBars();
+        // Update slider ke posisi band aktif
+        const fIdx = state.peqFreqIdx[activeCh][activeBand];
+        const peqGain = state.peqGain[activeCh][activeBand] / 10;
+        const q = state.peqQ[activeCh][activeBand] / 10;
+        const fs = document.getElementById('peqFreqSlider');
+        const pgs = document.getElementById('peqGainSlider');
+        const qs = document.getElementById('peqQSlider');
+        if(fs) fs.value = fIdx;
+        if(pgs) pgs.value = peqGain;
+        if(qs) qs.value = q;
+        const fVal = document.getElementById('peqFreqVal');
+        const gVal = document.getElementById('peqGainVal');
+        const qVal = document.getElementById('peqQVal');
+        if(fVal) fVal.textContent = FREQ_ISO[fIdx] + ' Hz';
+        if(gVal) gVal.textContent = (peqGain > 0 ? '+' : '') + peqGain.toFixed(1) + ' dB';
+        if(qVal) qVal.textContent = q.toFixed(1);
+      }
+    }
+    return;
+  }
+
+  // 2. JIKA MENERIMA PAKET STATUS DASAR (29 BYTE: Gain, Xover, Mute)
+  if(dv.byteLength >= 29){
     let p = 0;
     for(let ch=0; ch<4; ch++) state.route[ch] = dv.getUint8(p++);
     for(let ch=0; ch<4; ch++){ state.gain[ch] = dv.getInt16(p,true); p+=2; }
@@ -1009,6 +1002,7 @@ function onStatusNotify(e){
     const mask = dv.getUint8(p);
     for(let ch=0; ch<4; ch++) state.mute[ch+2] = !!(mask & (1<<(ch+2)));
   }
+
   if(currentTab!=='settings') render();
   renderOverviewCards();
 }
@@ -1019,11 +1013,51 @@ function onRtaNotify(e){
   const dv = e.target.value;
   for(let i=0;i<dv.byteLength && i<6;i++) meterVals[i] = dv.getUint8(i);
   updateMiniBars();
-  if(currentTab==='rta') drawMeterBars();
+
+  if (dv.byteLength >= 33) {
+    for (let i = 0; i < 33; i++) {
+      rtaPreTarget[i] = (dv.getUint8(i) / 255) * 60 - 60;
+    }
+  } else {
+    const inLevel = Math.max(meterVals[0], meterVals[1]);
+    const baseDb = (inLevel / 255) * 55 - 55;
+    for (let i = 0; i < NUM_BANDS; i++) {
+      const rolloff = (i / NUM_BANDS) * 8;
+      const jitter = (Math.sin(Date.now() / 80 + i) * 3);
+      rtaPreTarget[i] = (inLevel < 4) ? -60 : Math.max(-60, baseDb - rolloff + jitter);
+    }
+  }
+
   if(currentTab==='comp') updateGrMeter();
 }
 
-/* ---------------- TOAST NOTIFICATION ---------------- */
+// Smooth RTA Ballistics Animation Loop
+function rtaAnimationLoop() {
+  const attack = 0.45;
+  const decay = 0.08;
+
+  for (let i = 0; i < NUM_BANDS; i++) {
+    const target = rtaPreTarget[i];
+    if (target > rtaPreDb[i]) {
+      rtaPreDb[i] += (target - rtaPreDb[i]) * attack;
+    } else {
+      rtaPreDb[i] -= decay * 2.4;
+      if (rtaPreDb[i] < -60) rtaPreDb[i] = -60;
+    }
+
+    const eqDelta = getChannelEqGainAtFreq(activeCh, FREQ_ISO[i]);
+    rtaPostDb[i] = Math.max(-60, Math.min(6, rtaPreDb[i] + eqDelta));
+  }
+
+  if (currentTab === 'eq') {
+    drawEqBars();
+  }
+
+  requestAnimationFrame(rtaAnimationLoop);
+}
+requestAnimationFrame(rtaAnimationLoop);
+
+/* ---------------- TOAST ---------------- */
 let toastTimer=null;
 function toast(msg){
   const t=document.getElementById('toast');
@@ -1032,7 +1066,7 @@ function toast(msg){
   toastTimer=setTimeout(()=>t.classList.remove('show'), 2200);
 }
 
-/* ---------------- OVERVIEW CARDS (METER BRIDGE) ---------------- */
+/* ---------------- OVERVIEW CARDS ---------------- */
 function renderOverviewCards(){
   const inWrap = document.getElementById('inCards');
   inWrap.innerHTML = `
@@ -1074,7 +1108,7 @@ function updateMiniBars(){
   }
 }
 
-/* ---------------- NAVIGATION TABS & VIRTUAL BUTTON ---------------- */
+/* ---------------- NAVIGATION TABS ---------------- */
 document.getElementById('tabs').addEventListener('click', (e)=>{
   const b = e.target.closest('button');
   if(!b) return;
@@ -1094,7 +1128,6 @@ document.getElementById('tabs').addEventListener('click', (e)=>{
 
 document.getElementById('connBtn').addEventListener('click', connectBLE);
 
-/* Quick Preset Selector di Header */
 function fillPresetQuickSel(){
   const sel = document.getElementById('presetQuickSel');
   sel.innerHTML = presetProfiles.map((p,i)=>`
@@ -1117,7 +1150,6 @@ document.getElementById('quickSaveBtn').addEventListener('click', ()=>{
   toast('Tersimpan ke Slot [0' + (slot+1) + ']');
 });
 
-/* Channel Selector Strip Helper */
 function chSelector(count){
   let html = '<div class="chsel">';
   for(let i=0;i<count;i++){
@@ -1132,14 +1164,13 @@ function bindChSelector(container){
   });
 }
 
-/* ---------------- RENDER WORKSPACE ---------------- */
+/* ---------------- RENDER DISPATCHER ---------------- */
 function render(){
   if(currentTab==='matrix') renderMatrix();
   else if(currentTab==='xover') renderXover();
   else if(currentTab==='eq') renderEq();
   else if(currentTab==='delay') renderDelay();
   else if(currentTab==='comp') renderComp();
-  else if(currentTab==='rta') renderRta();
   else if(currentTab==='preset') renderPreset();
   else if(currentTab==='settings') renderSettings();
 
@@ -1165,16 +1196,160 @@ function renderMatrix(){
   });
 }
 
-/* 2. CROSSOVER / CHANNEL STRIP */
+/* ============================================================
+   2. CROSSOVER / CHANNEL STRIP (WITH LR4 4-WAY GRAPH)
+   ============================================================ */
+function calcLR4Db(f, hpf, lpf, gain) {
+  let dbHp = 0;
+  if (hpf > 20) {
+    dbHp = -20 * Math.log10(1 + Math.pow(hpf / f, 4));
+  }
+  let dbLp = 0;
+  if (lpf < 20000) {
+    dbLp = -20 * Math.log10(1 + Math.pow(f / lpf, 4));
+  }
+  return gain + dbHp + dbLp;
+}
+
+const XOVER_COLORS = ['#ff3366', '#ffc94a', '#3ee89a', '#00e5ff'];
+
+/* ============================================================
+   GRAFIK CROSSOVER 2-WAY STEREO (JUJUR & PRESISI)
+   ============================================================ */
+function drawXoverGraph() {
+  const cv = document.getElementById('xoverCanvas');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  
+  const padTop = 14, padBot = 22, padLeft = 28, padRight = 12;
+  const plotW = W - padLeft - padRight;
+  const plotH = H - padTop - padBot;
+  
+  const minDb = -30, maxDb = 6;
+  const dbToY = (db) => padTop + ((maxDb - db) / (maxDb - minDb)) * plotH;
+  const lMin = Math.log10(20), lMax = Math.log10(20000);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // 1. Grid dB Horizontal (-30 s/d +6 dB)
+  const dBs = [6, 0, -6, -12, -18, -24, -30];
+  dBs.forEach(db => {
+    const y = dbToY(db);
+    ctx.strokeStyle = (db === 0) ? 'rgba(0, 229, 255, 0.4)' : 
+                      (db === -6) ? 'rgba(255, 201, 74, 0.4)' : 'rgba(30, 41, 59, 0.5)';
+    ctx.lineWidth = (db === 0 || db === -6) ? 1.5 : 1;
+    ctx.setLineDash(db === -6 ? [4, 3] : []);
+    ctx.beginPath();
+    ctx.moveTo(padLeft, y);
+    ctx.lineTo(W - padRight, y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = (db === -6) ? '#ffc94a' : '#708499';
+    ctx.font = '8.5px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText((db > 0 ? '+' : '') + db, padLeft - 4, y + 3);
+  });
+
+  // 2. Grid Frekuensi Vertikal (20 Hz - 20 kHz)
+  const fMarks = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000];
+  fMarks.forEach(f => {
+    const x = padLeft + ((Math.log10(f) - lMin) / (lMax - lMin)) * plotW;
+    ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, padTop);
+    ctx.lineTo(x, H - padBot);
+    ctx.stroke();
+
+    const txt = f >= 1000 ? (f / 1000) + 'k' : '' + f;
+    ctx.fillStyle = '#708499';
+    ctx.font = '8.5px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(txt, x, H - 6);
+  });
+
+  // 3. Ambil Frekuensi Crossover Asli DSP
+  const hpfFreq = state.xoverHpf[0]; // HPF Speaker Utama (Out 1 & 2)
+  const lpfFreq = state.xoverLpf[2]; // LPF Subwoofer (Out 3 & 4)
+  const isHighActive = (activeCh === 0 || activeCh === 1);
+
+  // --- KURVA 1: SUBWOOFER (OUT 3 & 4) -> Warna Cyan/Mint ---
+  ctx.beginPath();
+  ctx.strokeStyle = !isHighActive ? '#00e5ff' : '#007c8a';
+  ctx.lineWidth = !isHighActive ? 2.5 : 1.5;
+  if (!isHighActive) { ctx.shadowColor = '#00e5ff'; ctx.shadowBlur = 8; }
+
+  for (let px = 0; px <= plotW; px += 2) {
+    const f = Math.pow(10, lMin + (px / plotW) * (lMax - lMin));
+    // Rumus Linkwitz-Riley LPF 24dB/oct
+    let db = (lpfFreq < 20000) ? -20 * Math.log10(1 + Math.pow(f / lpfFreq, 4)) : 0;
+    db = Math.max(minDb, Math.min(maxDb, db));
+    const py = dbToY(db);
+    if (px === 0) ctx.moveTo(padLeft + px, py); else ctx.lineTo(padLeft + px, py);
+  }
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // --- KURVA 2: MAIN HIGH (OUT 1 & 2) -> Warna Pink/Red ---
+  ctx.beginPath();
+  ctx.strokeStyle = isHighActive ? '#ff3366' : '#7a1c33';
+  ctx.lineWidth = isHighActive ? 2.5 : 1.5;
+  if (isHighActive) { ctx.shadowColor = '#ff3366'; ctx.shadowBlur = 8; }
+
+  for (let px = 0; px <= plotW; px += 2) {
+    const f = Math.pow(10, lMin + (px / plotW) * (lMax - lMin));
+    // Rumus Linkwitz-Riley HPF 24dB/oct
+    let db = (hpfFreq > 20) ? -20 * Math.log10(1 + Math.pow(hpfFreq / f, 4)) : 0;
+    db = Math.max(minDb, Math.min(maxDb, db));
+    const py = dbToY(db);
+    if (px === 0) ctx.moveTo(padLeft + px, py); else ctx.lineTo(padLeft + px, py);
+  }
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Penanda Titik Potong Keduanya
+  ctx.fillStyle = '#ffc94a';
+  ctx.font = 'bold 9px monospace';
+  ctx.textAlign = 'center';
+  const xCutH = padLeft + ((Math.log10(hpfFreq) - lMin) / (lMax - lMin)) * plotW;
+  const xCutL = padLeft + ((Math.log10(lpfFreq) - lMin) / (lMax - lMin)) * plotW;
+  ctx.fillText('HPF:' + hpfFreq + 'Hz', Math.max(padLeft + 35, Math.min(W - 40, xCutH)), dbToY(-6) - 8);
+  ctx.fillText('LPF:' + lpfFreq + 'Hz', Math.max(padLeft + 35, Math.min(W - 40, xCutL)), dbToY(-6) + 16);
+}
+
 function renderXover(){
   const win = document.getElementById('content-xover');
   const hpf=state.xoverHpf[activeCh], lpf=state.xoverLpf[activeCh], gain=state.gain[activeCh];
+
+  const legendHtml = `
+    <div class="legend" style="justify-content:center; gap:8px; margin-bottom:6px;">
+      <span style="color:${activeCh===0?'#ff3366':'#708499'};"><i style="background:#ff3366"></i>OUT 1 HIGH</span>
+      
+      <span style="color:${activeCh===2?'#00e5ff':'#708499'};"><i style="background:#00e5ff"></i>OUT 3 LOW</span>
+      
+    </div>
+  `;
+
   win.innerHTML = `
     <div class="panel">${chSelector(4)}
       <div class="toggle ${state.mute[activeCh+2]?'mute-on':''}" id="stripMuteBtn" style="text-align:center;">
         ${state.mute[activeCh+2] ? 'MUTED' : 'MUTE '+OUT_NAMES[activeCh]}
       </div>
     </div>
+    
+    <div class="panel">
+      <h3>Crossover Alignment Graph 2way OUT_1 & OUT_3 (LR-24dB)</h3>
+      ${legendHtml}
+      <div class="graphwrap">
+        <canvas id="xoverCanvas" width="600" height="220"></canvas>
+      </div>
+      <p class="graph-hint" style="color:var(--textdim); margin-top:5px;">
+        Titik potong antar channel bertemu di <b style="color:var(--amber);">-6.0 dB</b> untuk penjumlahan respon rata (Flat Sum).
+      </p>
+    </div>
+
     <div class="panel"><h3>Channel Strip — ${OUT_NAMES[activeCh]}</h3>
       <div class="faderstrip">
         <div class="fadercol">
@@ -1195,73 +1370,54 @@ function renderXover(){
       </div>
       <p class="hint">Filter Linkwitz-Riley 24dB/oct. Geser ke atas untuk menaikkan nilai.</p>
     </div>`;
+
   bindChSelector(win);
+  drawXoverGraph();
+
   win.querySelector('#stripMuteBtn').addEventListener('click', ()=>{
     const idx = activeCh+2;
     state.mute[idx] = !state.mute[idx];
     let mask=0; state.mute.forEach((m,i)=>{ if(m) mask |= (1<<i); });
     sendCmd(CMD.SET_MUTE, [mask]); render(); renderOverviewCards();
   });
+
   const gs=win.querySelector('#gainSlider');
   gs.addEventListener('input', ()=>{
     win.querySelector('#gainVal').textContent = (gs.value>0?'+':'')+gs.value+'dB';
     state.gain[activeCh]=+gs.value; sendLive('gain'+activeCh, CMD.SET_GAIN,[activeCh,...i16le(+gs.value)]);
+    drawXoverGraph();
   });
-  gs.addEventListener('change', ()=>{ state.gain[activeCh]=+gs.value; sendCmd(CMD.SET_GAIN,[activeCh,...i16le(+gs.value)]); renderOverviewCards(); });
+  gs.addEventListener('change', ()=>{ state.gain[activeCh]=+gs.value; sendCmd(CMD.SET_GAIN,[activeCh,...i16le(+gs.value)]); renderOverviewCards(); drawXoverGraph(); });
+
   const hs=win.querySelector('#hpfSlider');
   hs.addEventListener('input', ()=>{
     win.querySelector('#hpfVal').textContent = hs.value+'Hz';
     state.xoverHpf[activeCh]=+hs.value; sendLive('hpf'+activeCh, CMD.SET_XOVER_HPF,[activeCh,...i16le(+hs.value)]);
+    drawXoverGraph();
   });
-  hs.addEventListener('change', ()=>{ state.xoverHpf[activeCh]=+hs.value; sendCmd(CMD.SET_XOVER_HPF,[activeCh,...i16le(+hs.value)]); });
+  hs.addEventListener('change', ()=>{ state.xoverHpf[activeCh]=+hs.value; sendCmd(CMD.SET_XOVER_HPF,[activeCh,...i16le(+hs.value)]); drawXoverGraph(); });
+
   const ls=win.querySelector('#lpfSlider');
   ls.addEventListener('input', ()=>{
     win.querySelector('#lpfVal').textContent = ls.value+'Hz';
     state.xoverLpf[activeCh]=+ls.value; sendLive('lpf'+activeCh, CMD.SET_XOVER_LPF,[activeCh,...i16le(+ls.value)]);
+    drawXoverGraph();
   });
-  ls.addEventListener('change', ()=>{ state.xoverLpf[activeCh]=+ls.value; sendCmd(CMD.SET_XOVER_LPF,[activeCh,...i16le(+ls.value)]); });
+  ls.addEventListener('change', ()=>{ state.xoverLpf[activeCh]=+ls.value; sendCmd(CMD.SET_XOVER_LPF,[activeCh,...i16le(+ls.value)]); drawXoverGraph(); });
 }
 
-/* 3. EQUALIZER 9-BAND */
-function renderEq(){
-  const win = document.getElementById('content-eq');
-  const fIdx = state.peqFreqIdx[activeCh][activeBand];
-  const peqGain = state.peqGain[activeCh][activeBand]/10;
-  const q = state.peqQ[activeCh][activeBand]/10;
-  let bands='<div class="bandrow">';
-  for(let b=0;b<9;b++) bands += `<button data-band="${b}" class="${activeBand===b?'active':''}">${b+1}</button>`;
-  bands += '</div>';
-  win.innerHTML = `<div class="panel">${chSelector(4)}</div>
-    <div class="panel"><h3>Parametric EQ — 9 Band</h3>
-      <div class="graphwrap"><canvas id="eqCanvas" width="600" height="220"></canvas></div>
-      ${bands}
-      <div class="sliderow"><div class="top"><span class="lbl">Frequency</span><span class="val" id="peqFreqVal">${FREQ_ISO[fIdx]} Hz</span></div>
-      <input type="range" min="0" max="32" step="1" value="${fIdx}" id="peqFreqSlider"></div>
-      <div class="sliderow"><div class="top"><span class="lbl">Gain</span><span class="val" id="peqGainVal">${peqGain>0?'+':''}${peqGain.toFixed(1)} dB</span></div>
-      <input type="range" min="-12" max="12" step="0.1" value="${peqGain}" id="peqGainSlider"></div>
-      <div class="sliderow"><div class="top"><span class="lbl">Q Factor</span><span class="val" id="peqQVal">${q.toFixed(1)}</span></div>
-      <input type="range" min="0.3" max="10" step="0.1" value="${q}" id="peqQSlider"></div>
-    </div>`;
-  bindChSelector(win);
-  drawEqBars();
-  win.querySelectorAll('[data-band]').forEach(b=>{
-    b.addEventListener('click', ()=>{ activeBand=+b.dataset.band; render(); });
-  });
-  const fs=win.querySelector('#peqFreqSlider'), pgs=win.querySelector('#peqGainSlider'), qs=win.querySelector('#peqQSlider');
-  function peqPayload(){
-    const freqIdx=+fs.value, gainX10=Math.round(+pgs.value*10), qX10=Math.round(+qs.value*10);
-    state.peqFreqIdx[activeCh][activeBand]=freqIdx; state.peqGain[activeCh][activeBand]=gainX10; state.peqQ[activeCh][activeBand]=qX10;
-    return [activeCh, activeBand, freqIdx, ...i16le(gainX10), ...u16le(qX10)];
+/* ============================================================
+   3. EQUALIZER 9-BAND + RTA FULL-BAND OVERLAY (PRE & POST)
+   ============================================================ */
+function getChannelEqGainAtFreq(ch, freq) {
+  let totalDb = 0;
+  for (let b = 0; b < 9; b++) {
+    const f0 = FREQ_ISO[state.peqFreqIdx[ch][b]];
+    const gain = state.peqGain[ch][b] / 10;
+    const q = state.peqQ[ch][b] / 10;
+    totalDb += calcBiquadPeakDb(f0, gain, q, freq);
   }
-  function peqLive(){ sendLive('peq'+activeCh+'_'+activeBand, CMD.SET_PEQ, peqPayload()); }
-  fs.addEventListener('input', ()=>{ win.querySelector('#peqFreqVal').textContent = FREQ_ISO[+fs.value]+' Hz'; peqLive(); drawEqBars(); });
-  pgs.addEventListener('input', ()=>{
-    const v=+pgs.value; win.querySelector('#peqGainVal').textContent=(v>0?'+':'')+v.toFixed(1)+' dB';
-    peqLive(); drawEqBars(v);
-  });
-  qs.addEventListener('input', ()=>{ win.querySelector('#peqQVal').textContent = (+qs.value).toFixed(1); peqLive(); drawEqBars(); });
-  function sendPeq(){ sendCmd(CMD.SET_PEQ, peqPayload()); drawEqBars(); }
-  fs.addEventListener('change', sendPeq); pgs.addEventListener('change', sendPeq); qs.addEventListener('change', sendPeq);
+  return totalDb;
 }
 
 function calcBiquadPeakDb(f0, gainDb, Q, f, fs = 48000) {
@@ -1291,7 +1447,7 @@ function calcBiquadPeakDb(f0, gainDb, Q, f, fs = 48000) {
   return 10 * Math.log10(Math.max(mag_sq, 1e-20));
 }
 
-function drawEqBars(liveGainOverride) {
+function drawEqBars() {
   const cv = document.getElementById('eqCanvas'); if (!cv) return;
   const ctx = cv.getContext('2d');
   const W = cv.width, H = cv.height;
@@ -1299,9 +1455,11 @@ function drawEqBars(liveGainOverride) {
   const plotW = W - padLeft - padRight;
   const plotH = H - padTop - padBot;
   const midY = padTop + plotH / 2;
+  const lMin = Math.log10(20), lMax = Math.log10(20000);
 
   ctx.clearRect(0, 0, W, H);
 
+  // Background Grid dB
   const dBs = [12, 6, 0, -6, -12];
   dBs.forEach(db => {
     const y = midY - (db / 12) * (plotH / 2);
@@ -1312,8 +1470,8 @@ function drawEqBars(liveGainOverride) {
     if (db !== 0) ctx.fillText((db > 0 ? '+' : '') + db + 'dB', padLeft + 2, y - 2);
   });
 
+  // Vertical Grid Frekuensi Logaritmik
   const fMarks = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000];
-  const lMin = Math.log10(20), lMax = Math.log10(20000);
   fMarks.forEach(f => {
     const x = padLeft + ((Math.log10(f) - lMin) / (lMax - lMin)) * plotW;
     ctx.strokeStyle = 'rgba(30, 41, 59, 0.5)'; ctx.lineWidth = 1;
@@ -1323,32 +1481,77 @@ function drawEqBars(liveGainOverride) {
     ctx.fillText(txt, x, H - 6);
   });
 
+  // ========================================================
+  // RTA FULL-BAND SPECTRUM OVERLAY (PRE & POST EQ)
+  // ========================================================
+  if (rtaMode !== 'OFF') {
+    const rtaToY = (db) => {
+      const clamped = Math.max(-60, Math.min(0, db));
+      return (H - padBot) - ((clamped + 60) / 60) * plotH;
+    };
+
+    // A. PRE-EQ (Sinyal Masuk - Grey Tint)
+    if (rtaMode === 'PRE' || rtaMode === 'BOTH') {
+      ctx.beginPath();
+      ctx.moveTo(padLeft, H - padBot);
+      for (let i = 0; i < NUM_BANDS; i++) {
+        const x = padLeft + ((Math.log10(FREQ_ISO[i]) - lMin) / (lMax - lMin)) * plotW;
+        ctx.lineTo(x, rtaToY(rtaPreDb[i]));
+      }
+      ctx.lineTo(W - padRight, H - padBot);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(148, 163, 184, 0.16)';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.45)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < NUM_BANDS; i++) {
+        const x = padLeft + ((Math.log10(FREQ_ISO[i]) - lMin) / (lMax - lMin)) * plotW;
+        const y = rtaToY(rtaPreDb[i]);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    // B. POST-EQ (Sinyal Hasil Filter - Mint Glow)
+    if (rtaMode === 'POST' || rtaMode === 'BOTH') {
+      ctx.beginPath();
+      ctx.moveTo(padLeft, H - padBot);
+      for (let i = 0; i < NUM_BANDS; i++) {
+        const x = padLeft + ((Math.log10(FREQ_ISO[i]) - lMin) / (lMax - lMin)) * plotW;
+        ctx.lineTo(x, rtaToY(rtaPostDb[i]));
+      }
+      ctx.lineTo(W - padRight, H - padBot);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(62, 232, 154, 0.2)';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.strokeStyle = '#3ee89a';
+      ctx.lineWidth = 1.4;
+      for (let i = 0; i < NUM_BANDS; i++) {
+        const x = padLeft + ((Math.log10(FREQ_ISO[i]) - lMin) / (lMax - lMin)) * plotW;
+        const y = rtaToY(rtaPostDb[i]);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+  }
+
+  // ========================================================
+  // EQ BIQUAD FILTER CURVE & NODES
+  // ========================================================
   const bands = [];
   for (let b = 0; b < 9; b++) {
-    const f = FREQ_ISO[state.peqFreqIdx[activeCh][b]];
-    const g = (b === activeBand && liveGainOverride !== undefined) 
-              ? liveGainOverride 
-              : state.peqGain[activeCh][b] / 10;
-    const q = state.peqQ[activeCh][b] / 10;
-    bands.push({ freq: f, gain: g, q: q });
+    bands.push({
+      freq: FREQ_ISO[state.peqFreqIdx[activeCh][b]],
+      gain: state.peqGain[activeCh][b] / 10,
+      q: state.peqQ[activeCh][b] / 10
+    });
   }
 
-  // Shading Area
-  ctx.beginPath();
-  ctx.moveTo(padLeft, midY);
-  for (let px = 0; px <= plotW; px += 2) {
-    const f = Math.pow(10, lMin + (px / plotW) * (lMax - lMin));
-    let totalDb = 0;
-    for (let b = 0; b < 9; b++) totalDb += calcBiquadPeakDb(bands[b].freq, bands[b].gain, bands[b].q, f);
-    const py = midY - (totalDb / 12) * (plotH / 2);
-    ctx.lineTo(padLeft + px, Math.max(padTop, Math.min(H - padBot, py)));
-  }
-  ctx.lineTo(W - padRight, midY);
-  ctx.closePath();
-  ctx.fillStyle = 'rgba(0, 229, 255, 0.12)';
-  ctx.fill();
-
-  // Kurva Benang Glowing
+  // Garis Respons EQ (Neon Cyan)
   ctx.beginPath();
   ctx.strokeStyle = '#00e5ff';
   ctx.lineWidth = 2.5;
@@ -1366,7 +1569,7 @@ function drawEqBars(liveGainOverride) {
   ctx.stroke();
   ctx.shadowBlur = 0;
 
-  // Titik Node
+  // Render Titik Node 1-9
   for (let b = 0; b < 9; b++) {
     const f = bands[b].freq;
     const x = padLeft + ((Math.log10(f) - lMin) / (lMax - lMin)) * plotW;
@@ -1377,26 +1580,339 @@ function drawEqBars(liveGainOverride) {
 
     if (isActive) {
       ctx.beginPath();
-      ctx.arc(x, y, 7, 0, Math.PI * 2);
+      ctx.arc(x, y, 9, 0, Math.PI * 2);
       ctx.strokeStyle = '#ffc94a';
       ctx.lineWidth = 2;
       ctx.stroke();
     }
 
     ctx.beginPath();
-    ctx.arc(x, y, isActive ? 4.5 : 3.5, 0, Math.PI * 2);
+    ctx.arc(x, y, isActive ? 5 : 3.5, 0, Math.PI * 2);
     ctx.fillStyle = isActive ? '#ffc94a' : '#3ee89a';
     ctx.fill();
     ctx.strokeStyle = '#0b0c10';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1.2;
     ctx.stroke();
 
     ctx.fillStyle = isActive ? '#ffc94a' : '#708499';
     ctx.font = 'bold 9px monospace';
     ctx.textAlign = 'center';
-    const labelY = (totalDb >= 0) ? y - 9 : y + 14;
+    const labelY = (totalDb >= 0) ? y - 11 : y + 16;
     ctx.fillText(b + 1, x, Math.max(padTop + 8, Math.min(H - padBot + 1, labelY)));
   }
+}
+
+function renderEq(){
+  const win = document.getElementById('content-eq');
+  const fIdx = state.peqFreqIdx[activeCh][activeBand];
+  const peqGain = state.peqGain[activeCh][activeBand]/10;
+  const q = state.peqQ[activeCh][activeBand]/10;
+  const isBypassed = eqBypassState[activeCh];
+
+  let bands='<div class="bandrow">';
+  for(let b=0;b<9;b++) bands += `<button data-band="${b}" class="${activeBand===b?'active':''}">${b+1}</button>`;
+  bands += '</div>';
+
+  win.innerHTML = `
+    <div class="panel">${chSelector(4)}</div>
+    <div class="panel">
+      <!-- TOOLBAR PRO EQ -->
+      <div class="eq-toolbar">
+        <button class="eq-tool-btn ${isBypassed?'bypass-active':''}" id="eqBypassBtn">
+          <i data-lucide="power" style="width:12px;height:12px;"></i>
+          <span>${isBypassed ? 'BYPASS ON' : 'BYPASS'}</span>
+        </button>
+        <button class="eq-tool-btn" id="eqFlatBtn">
+          <i data-lucide="rotate-ccw" style="width:12px;height:12px;"></i>
+          <span>FLAT ALL</span>
+        </button>
+        <button class="eq-tool-btn" id="eqCopyBtn">
+          <i data-lucide="copy" style="width:12px;height:12px;"></i>
+          <span>COPY</span>
+        </button>
+        <button class="eq-tool-btn" id="eqPasteBtn" ${eqClipboard ? '' : 'disabled'}>
+          <i data-lucide="clipboard" style="width:12px;height:12px;"></i>
+          <span>PASTE</span>
+        </button>
+        <button class="eq-tool-btn" id="eqRtaToggleBtn" style="color:var(--cyan); border-color:rgba(0,229,255,0.4);">
+          <i data-lucide="activity" style="width:12px;height:12px;"></i>
+          <span id="rtaBtnLabel">RTA: ${rtaMode}</span>
+        </button>
+      </div>
+
+      <!-- GRAFIK TOUCH & DRAG + RTA SPECTRUM -->
+      <div class="graphwrap">
+        <div class="legend" style="justify-content: flex-end; gap: 8px; margin-bottom: 3px;">
+          <span><i style="background:#708499"></i>PRE-EQ</span>
+          <span><i style="background:#3ee89a"></i>POST-EQ</span>
+          <span><i style="background:#00e5ff"></i>FILTER</span>
+        </div>
+        <canvas id="eqCanvas" width="600" height="230"></canvas>
+        <div class="graph-hint">💡 SENTUH &amp; GESER TITIK 1-9 LANGSUNG DI GRAFIK UNTUK ATUR FREK &amp; GAIN</div>
+      </div>
+
+      ${bands}
+
+      <!-- SLIDERS WITH STEP BUTTONS -->
+      <div class="sliderow">
+        <div class="top">
+          <span class="lbl">Frequency</span>
+          <div class="step-group">
+            <button class="step-btn" data-step="freq,-1">-</button>
+            <span class="val" id="peqFreqVal">${FREQ_ISO[fIdx]} Hz</span>
+            <button class="step-btn" data-step="freq,1">+</button>
+          </div>
+        </div>
+        <input type="range" min="0" max="32" step="1" value="${fIdx}" id="peqFreqSlider">
+      </div>
+
+      <div class="sliderow">
+        <div class="top">
+          <span class="lbl">Gain</span>
+          <div class="step-group">
+            <button class="step-btn" data-step="gain,-0.1">-</button>
+            <span class="val" id="peqGainVal">${peqGain>0?'+':''}${peqGain.toFixed(1)} dB</span>
+            <button class="step-btn" data-step="gain,0.1">+</button>
+          </div>
+        </div>
+        <input type="range" min="-12" max="12" step="0.1" value="${peqGain}" id="peqGainSlider">
+      </div>
+
+      <div class="sliderow">
+        <div class="top">
+          <span class="lbl">Q Factor (Bandwidth)</span>
+          <div class="step-group">
+            <button class="step-btn" data-step="q,-0.1">-</button>
+            <span class="val" id="peqQVal">${q.toFixed(1)}</span>
+            <button class="step-btn" data-step="q,0.1">+</button>
+          </div>
+        </div>
+        <input type="range" min="0.3" max="10" step="0.1" value="${q}" id="peqQSlider">
+      </div>
+    </div>`;
+
+  bindChSelector(win);
+  drawEqBars();
+  attachCanvasTouchEvents();
+
+  win.querySelectorAll('[data-band]').forEach(b=>{
+    b.addEventListener('click', ()=>{ activeBand=+b.dataset.band; render(); });
+  });
+
+  const fs=win.querySelector('#peqFreqSlider'), pgs=win.querySelector('#peqGainSlider'), qs=win.querySelector('#peqQSlider');
+
+  function peqPayload(bIdx = activeBand){
+    const freqIdx = state.peqFreqIdx[activeCh][bIdx];
+    const gainX10 = state.peqGain[activeCh][bIdx];
+    const qX10 = state.peqQ[activeCh][bIdx];
+    return [activeCh, bIdx, freqIdx, ...i16le(gainX10), ...u16le(qX10)];
+  }
+  function peqLive(bIdx = activeBand){ sendLive('peq'+activeCh+'_'+bIdx, CMD.SET_PEQ, peqPayload(bIdx)); }
+  function sendPeq(bIdx = activeBand){ sendCmd(CMD.SET_PEQ, peqPayload(bIdx)); drawEqBars(); }
+
+  fs.addEventListener('input', ()=>{
+    state.peqFreqIdx[activeCh][activeBand] = +fs.value;
+    win.querySelector('#peqFreqVal').textContent = FREQ_ISO[+fs.value]+' Hz';
+    peqLive(); drawEqBars();
+  });
+  pgs.addEventListener('input', ()=>{
+    const v = +pgs.value;
+    state.peqGain[activeCh][activeBand] = Math.round(v * 10);
+    win.querySelector('#peqGainVal').textContent = (v>0?'+':'')+v.toFixed(1)+' dB';
+    peqLive(); drawEqBars();
+  });
+  qs.addEventListener('input', ()=>{
+    const v = +qs.value;
+    state.peqQ[activeCh][activeBand] = Math.round(v * 10);
+    win.querySelector('#peqQVal').textContent = v.toFixed(1);
+    peqLive(); drawEqBars();
+  });
+
+  fs.addEventListener('change', () => sendPeq());
+  pgs.addEventListener('change', () => sendPeq());
+  qs.addEventListener('change', () => sendPeq());
+
+  win.querySelectorAll('.step-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const [param, val] = btn.dataset.step.split(',');
+      const stepVal = parseFloat(val);
+      if (param === 'freq') {
+        let cur = state.peqFreqIdx[activeCh][activeBand] + stepVal;
+        cur = Math.max(0, Math.min(32, cur));
+        state.peqFreqIdx[activeCh][activeBand] = cur;
+        fs.value = cur;
+        win.querySelector('#peqFreqVal').textContent = FREQ_ISO[cur] + ' Hz';
+      } else if (param === 'gain') {
+        let cur = (state.peqGain[activeCh][activeBand] / 10) + stepVal;
+        cur = Math.max(-12, Math.min(12, Math.round(cur * 10) / 10));
+        state.peqGain[activeCh][activeBand] = Math.round(cur * 10);
+        pgs.value = cur;
+        win.querySelector('#peqGainVal').textContent = (cur > 0 ? '+' : '') + cur.toFixed(1) + ' dB';
+      } else if (param === 'q') {
+        let cur = (state.peqQ[activeCh][activeBand] / 10) + stepVal;
+        cur = Math.max(0.3, Math.min(10, Math.round(cur * 10) / 10));
+        state.peqQ[activeCh][activeBand] = Math.round(cur * 10);
+        qs.value = cur;
+        win.querySelector('#peqQVal').textContent = cur.toFixed(1);
+      }
+      sendPeq();
+    });
+  });
+
+  // TOOLBAR EVENTS
+  win.querySelector('#eqBypassBtn').addEventListener('click', () => {
+    eqBypassState[activeCh] = !eqBypassState[activeCh];
+    if (eqBypassState[activeCh]) {
+      eqBypassBackup[activeCh] = [...state.peqGain[activeCh]];
+      state.peqGain[activeCh] = [0,0,0,0,0,0,0,0,0];
+      toast('EQ ' + OUT_NAMES[activeCh] + ' BYPASSED');
+    } else {
+      if (eqBypassBackup[activeCh]) state.peqGain[activeCh] = [...eqBypassBackup[activeCh]];
+      toast('EQ ' + OUT_NAMES[activeCh] + ' ACTIVE');
+    }
+    for (let b = 0; b < 9; b++) sendCmd(CMD.SET_PEQ, peqPayload(b));
+    render();
+  });
+
+  win.querySelector('#eqFlatBtn').addEventListener('click', () => {
+    state.peqGain[activeCh] = [0,0,0,0,0,0,0,0,0];
+    for (let b = 0; b < 9; b++) sendCmd(CMD.SET_PEQ, peqPayload(b));
+    toast('Semua band EQ direset ke 0.0 dB');
+    render();
+  });
+
+  win.querySelector('#eqCopyBtn').addEventListener('click', () => {
+    eqClipboard = {
+      freq: [...state.peqFreqIdx[activeCh]],
+      gain: [...state.peqGain[activeCh]],
+      q: [...state.peqQ[activeCh]]
+    };
+    toast('EQ disalin!');
+    render();
+  });
+
+  win.querySelector('#eqPasteBtn').addEventListener('click', () => {
+    if (!eqClipboard) return;
+    state.peqFreqIdx[activeCh] = [...eqClipboard.freq];
+    state.peqGain[activeCh] = [...eqClipboard.gain];
+    state.peqQ[activeCh] = [...eqClipboard.q];
+    for (let b = 0; b < 9; b++) sendCmd(CMD.SET_PEQ, peqPayload(b));
+    toast('EQ ditempelkan ke ' + OUT_NAMES[activeCh]);
+    render();
+  });
+
+  win.querySelector('#eqRtaToggleBtn').addEventListener('click', () => {
+    if (rtaMode === 'BOTH') rtaMode = 'PRE';
+    else if (rtaMode === 'PRE') rtaMode = 'POST';
+    else if (rtaMode === 'POST') rtaMode = 'OFF';
+    else rtaMode = 'BOTH';
+    document.getElementById('rtaBtnLabel').textContent = 'RTA: ' + rtaMode;
+    toast('Mode RTA: ' + rtaMode);
+    drawEqBars();
+  });
+}
+
+function attachCanvasTouchEvents() {
+  const cv = document.getElementById('eqCanvas');
+  if (!cv) return;
+
+  const padTop = 14, padBot = 22, padLeft = 10, padRight = 10;
+  const plotW = cv.width - padLeft - padRight;
+  const plotH = cv.height - padTop - padBot;
+  const midY = padTop + plotH / 2;
+  const lMin = Math.log10(20), lMax = Math.log10(20000);
+
+  function getCanvasCoords(e) {
+    const rect = cv.getBoundingClientRect();
+    const scaleX = cv.width / rect.width;
+    const scaleY = cv.height / rect.height;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+  }
+
+  function handleTouchStart(e) {
+    const { x, y } = getCanvasCoords(e);
+    let bestDist = Infinity, selectedB = -1;
+
+    for (let b = 0; b < 9; b++) {
+      const f = FREQ_ISO[state.peqFreqIdx[activeCh][b]];
+      const nx = padLeft + ((Math.log10(f) - lMin) / (lMax - lMin)) * plotW;
+      const g = state.peqGain[activeCh][b] / 10;
+      const ny = midY - (g / 12) * (plotH / 2);
+
+      const dist = Math.hypot(x - nx, y - ny);
+      if (dist < 34 && dist < bestDist) {
+        bestDist = dist;
+        selectedB = b;
+      }
+    }
+
+    if (selectedB !== -1) {
+      isDraggingNode = true;
+      draggedBandIdx = selectedB;
+      activeBand = selectedB;
+      render();
+      if (e.cancelable) e.preventDefault();
+    }
+  }
+
+  function handleTouchMove(e) {
+    if (!isDraggingNode || draggedBandIdx === null) return;
+    if (e.cancelable) e.preventDefault();
+
+    const { x, y } = getCanvasCoords(e);
+    let rawGain = ((midY - y) / (plotH / 2)) * 12;
+    rawGain = Math.max(-12, Math.min(12, Math.round(rawGain * 10) / 10));
+    state.peqGain[activeCh][draggedBandIdx] = Math.round(rawGain * 10);
+
+    const clampedX = Math.max(padLeft, Math.min(cv.width - padRight, x));
+    const t = (clampedX - padLeft) / plotW;
+    const targetFreq = Math.pow(10, lMin + t * (lMax - lMin));
+
+    let bestIdx = 0, bestDiff = Infinity;
+    FREQ_ISO.forEach((f, idx) => {
+      const diff = Math.abs(Math.log10(f) - Math.log10(targetFreq));
+      if (diff < bestDiff) { bestDiff = diff; bestIdx = idx; }
+    });
+    state.peqFreqIdx[activeCh][draggedBandIdx] = bestIdx;
+
+    const fs = document.getElementById('peqFreqSlider');
+    const pgs = document.getElementById('peqGainSlider');
+    const fVal = document.getElementById('peqFreqVal');
+    const gVal = document.getElementById('peqGainVal');
+
+    if (fs) fs.value = bestIdx;
+    if (pgs) pgs.value = rawGain;
+    if (fVal) fVal.textContent = FREQ_ISO[bestIdx] + ' Hz';
+    if (gVal) gVal.textContent = (rawGain > 0 ? '+' : '') + rawGain.toFixed(1) + ' dB';
+
+    sendLive('peq'+activeCh+'_'+draggedBandIdx, CMD.SET_PEQ, [
+      activeCh, draggedBandIdx, bestIdx,
+      ...i16le(state.peqGain[activeCh][draggedBandIdx]),
+      ...u16le(state.peqQ[activeCh][draggedBandIdx])
+    ]);
+    drawEqBars();
+  }
+
+  function handleTouchEnd() {
+    if (isDraggingNode && draggedBandIdx !== null) {
+      sendCmd(CMD.SET_PEQ, [
+        activeCh, draggedBandIdx, state.peqFreqIdx[activeCh][draggedBandIdx],
+        ...i16le(state.peqGain[activeCh][draggedBandIdx]),
+        ...u16le(state.peqQ[activeCh][draggedBandIdx])
+      ]);
+    }
+    isDraggingNode = false;
+    draggedBandIdx = null;
+  }
+
+  cv.addEventListener('touchstart', handleTouchStart, { passive: false });
+  cv.addEventListener('touchmove', handleTouchMove, { passive: false });
+  cv.addEventListener('touchend', handleTouchEnd);
+  cv.addEventListener('mousedown', handleTouchStart);
+  window.addEventListener('mousemove', handleTouchMove);
+  window.addEventListener('mouseup', handleTouchEnd);
 }
 
 /* 4. DELAY */
@@ -1513,42 +2029,7 @@ function updateGrMeter(){
   txt.textContent = '-' + gr.toFixed(1);
 }
 
-/* 6. REAL TIME ANALYZER (LEVEL METER) */
-function renderRta(){
-  const win = document.getElementById('content-rta');
-  let labels=''; METER_LABELS.forEach(l=> labels += `<span>${l}</span>`);
-  win.innerHTML = `<div class="panel"><h3>Level Meter — Input &amp; Output</h3>
-    <div class="legend">
-      <span><i style="background:var(--cyan)"></i>IN L/R</span>
-      <span><i style="background:var(--mint)"></i>OUT 1-4</span>
-    </div>
-    <div class="graphwrap"><canvas id="rtaCanvas" width="600" height="340"></canvas></div>
-    <div class="rtalabels">${labels}</div>
-    <p class="hint">Meter visual: 2 Bar Input (Pre-DSP) &amp; 4 Bar Output (Post-DSP).</p></div>`;
-  drawMeterBars();
-}
-function drawMeterBars(){
-  const cv = document.getElementById('rtaCanvas'); if(!cv) return;
-  const ctx = cv.getContext('2d');
-  const W = cv.width, H = cv.height;
-  ctx.clearRect(0,0,W,H);
-  ctx.strokeStyle = 'rgba(30,41,59,0.5)'; ctx.lineWidth = 1;
-  for(let i=1;i<4;i++){ const y=H/4*i; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
-  const n = 6, gap = 14, barW = (W - gap*(n+1)) / n;
-  for(let i=0;i<n;i++){
-    const x = gap + i*(barW+gap);
-    const h = Math.max(2, (meterVals[i]/255)*H*0.95);
-    const grad = ctx.createLinearGradient(0,H-h,0,H);
-    grad.addColorStop(0, '#ff3366'); grad.addColorStop(0.35,'#ffc94a'); grad.addColorStop(1,'#3ee89a');
-    ctx.fillStyle = i<2 ? '#00e5ff' : grad;
-    ctx.fillRect(x, H-h, barW, h);
-  }
-  const sepX = gap + 2*(barW+gap) - gap/2;
-  ctx.strokeStyle = 'rgba(241,245,249,0.25)'; ctx.setLineDash([4,4]); ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(sepX,0); ctx.lineTo(sepX,H); ctx.stroke(); ctx.setLineDash([]);
-}
-
-/* 7. PRESET MANAGER TAMPILAN HARDWARE MEMORY BANK */
+/* 6. PRESET MANAGER */
 function renderPreset(){
   const win = document.getElementById('content-preset');
   
@@ -1566,12 +2047,10 @@ function renderPreset(){
           <div class="preset-desc">${p.desc}</div>
         </div>
         <div class="preset-actions">
-          <button class="btn-action" data-edit="${i}" title="Edit Nama & Info">
+          <button class="btn-action" data-edit="${i}" title="Edit Info">
             <i data-lucide="edit-3" style="width:13px;height:13px;"></i>
           </button>
-          <button class="btn-action btn-store" data-save="${i}" title="Simpan Settingan ke Slot Ini">
-            STORE
-          </button>
+          <button class="btn-action btn-store" data-save="${i}">STORE</button>
           ${isLoaded 
             ? `<span class="btn-action active-label">ACTIVE</span>` 
             : `<button class="btn-action btn-recall" data-load="${i}">RECALL</button>`}
@@ -1584,7 +2063,7 @@ function renderPreset(){
     <div class="panel">
       <h3>Internal DSP Memory Banks (EEPROM)</h3>
       ${cardsHtml}
-      <p class="hint">Tekan <b>RECALL</b> untuk memanggil preset, <b>STORE</b> untuk menyimpan settingan aktif ke slot, atau tombol <b>pensil</b> untuk mengubah nama preset sound system Anda.</p>
+      <p class="hint">Tekan <b>RECALL</b> untuk memanggil preset, <b>STORE</b> untuk menyimpan settingan ke slot, atau tombol <b>pensil</b> untuk mengubah nama profil.</p>
     </div>`;
 
   win.querySelectorAll('[data-load]').forEach(b => {
@@ -1614,7 +2093,6 @@ function renderPreset(){
   });
 }
 
-/* Modal Edit Preset Handler */
 let editingSlot = null;
 function openPresetEditModal(slotIndex) {
   editingSlot = slotIndex;
@@ -1628,23 +2106,20 @@ function openPresetEditModal(slotIndex) {
   modal.classList.add('show');
   setTimeout(() => nameInp.focus(), 50);
 
-  document.getElementById('presetModalCancel').onclick = () => {
-    modal.classList.remove('show');
-  };
-
+  document.getElementById('presetModalCancel').onclick = () => modal.classList.remove('show');
   document.getElementById('presetModalSave').onclick = () => {
     const newName = nameInp.value.trim().toUpperCase();
     if (!newName) { toast('Nama preset tidak boleh kosong'); return; }
     presetProfiles[editingSlot].name = newName;
-    presetProfiles[editingSlot].desc = descInp.value.trim() || 'Custom Speaker Profile';
+    presetProfiles[editingSlot].desc = descInp.value.trim() || 'Custom Profile';
     saveStoredPresets();
     modal.classList.remove('show');
-    toast('Slot [0' + (editingSlot+1) + '] berhasil diperbarui');
+    toast('Slot [0' + (editingSlot+1) + '] diperbarui');
     render();
   };
 }
 
-/* 8. PENGATURAN / SETUP */
+/* 7. SETTINGS / SETUP */
 function renderSettings(){
   const win = document.getElementById('content-settings');
   const savedPin = !!localStorage.getItem('dlms_pin');
@@ -1656,7 +2131,7 @@ function renderSettings(){
       <button class="btn" id="pinForget" ${savedPin?'':'disabled'}>LUPAKAN PIN</button>
     </div>
     <p class="hint">Status: ${connected ? (authed ? 'Terhubung &amp; Terbuka' : 'Terhubung, TERKUNCI') : 'Belum Terhubung'}${savedPin?' &middot; PIN tersimpan':''}.<br>
-    Pengaturan WiFi AP, nama BLE, dan ganti logo dapat diakses melalui web server PERANGKAT di 192.168.4.1 saat mode WiFi aktif.</p>
+    Pengaturan WiFi AP, nama BLE, dan ganti logo dapat diakses melalui web server board di 192.168.4.1 saat mode WiFi aktif.</p>
   </div>`;
   win.querySelector('#pinSend').onclick=async()=>{
     const v=win.querySelector('#pinInp').value.trim();
@@ -1669,9 +2144,7 @@ function renderSettings(){
   win.querySelector('#pinForget').onclick=()=>{ localStorage.removeItem('dlms_pin'); toast('PIN dihapus'); renderSettings(); };
 }
 
-/* ============================================================
-   LOGIKA AUTO-HIDE PINTEREST TAB + TOMBOL VIRTUAL TOGGLE
-   ============================================================ */
+/* ---------------- AUTO-HIDE TABS ON SCROLL ---------------- */
 const mainWorkspace = document.getElementById('main');
 const tabsNav = document.getElementById('tabs');
 const virtualBtn = document.getElementById('tabToggleBtn');
@@ -1711,7 +2184,7 @@ virtualBtn.addEventListener('click', () => {
   }
 });
 
-/* ---------------- INITIALIZATION ---------------- */
+/* ---------------- INIT ---------------- */
 fillPresetQuickSel();
 renderOverviewCards();
 render();
