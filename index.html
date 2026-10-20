@@ -1,0 +1,2211 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>ELIKASARI DSP S3</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#0b0c10">
+<link rel="icon" href="./dlms240-192.png">
+<link rel="apple-touch-icon" href="./dlms240-192.png">
+
+<!-- CDN Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+  :root {
+    --bg: #0b0c10;
+    --panel: #11151f;
+    --panel2: #141923;
+    --card: #0f141d;
+    --line: #1e293b;
+    --line-light: #2c3a50;
+    --cyan: #00e5ff;
+    --cyan-dim: #007c8a;
+    --cyan-glow: rgba(0, 229, 255, 0.35);
+    --mint: #3ee89a;
+    --amber: #ffc94a;
+    --red: #ff3366;
+    --text: #f1f5f9;
+    --textdim: #708499;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    overscroll-behavior: none;
+    user-select: none;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  #app {
+    max-width: 520px;
+    margin: 0 auto;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: var(--bg);
+    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+  }
+
+  /* Cegah scroll layar saat slider atau canvas disentuh */
+  input[type=range], 
+  input.vslider, 
+  .fadertrack,
+  #eqCanvas,
+  #xoverCanvas,
+  #compCanvas {
+    touch-action: none;
+  }
+
+  /* ---------- TOP BAR / HEADER ---------- */
+  header {
+    flex-shrink: 0;
+    padding: 10px 14px 8px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #141923 0%, #0b0c10 100%);
+  }
+  .brandrow { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .brand { display: flex; align-items: center; }
+
+  .brand-logo {
+    height: 52px;
+    max-width: 220px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.35));
+  }
+  .connbtn {
+    display: flex; align-items: center; gap: 6px; background: var(--panel2);
+    border: 1px solid var(--line); padding: 6px 12px; border-radius: 20px;
+    font-size: 10px; font-weight: 700; letter-spacing: .06em; color: var(--textdim);
+    transition: all .2s ease;
+  }
+  .connbtn.on { color: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 10px var(--cyan-glow); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--textdim); }
+  .connbtn.on .dot { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+  
+  .presetbar { display: flex; align-items: center; gap: 6px; }
+  .presetbar select {
+    flex: 1; 
+    appearance: none;
+    -webkit-appearance: none;
+    background: linear-gradient(180deg, #141b27 0%, #0a0e16 100%); 
+    border: 1px solid #1c2738;
+    color: var(--cyan); 
+    font-family: var(--mono); 
+    font-size: 11px; 
+    font-weight: 800;
+    padding: 8px 30px 8px 10px; 
+    border-radius: 6px; 
+    text-transform: uppercase; 
+    outline: none;
+    cursor: pointer;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.4);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2300e5ff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+  }
+  .presetbar select option {
+    background: #0c121d;
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 10px;
+  }
+  .presetbar button {
+    background: linear-gradient(180deg, #182232 0%, #0c121d 100%);
+    border: 1px solid #202d42; 
+    color: #8da2b5;
+    font-size: 10px; 
+    font-weight: 800; 
+    font-family: var(--mono); 
+    padding: 8px 13px;
+    border-radius: 6px; 
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08);
+    transition: all .12s ease;
+  }
+  .presetbar button:active {
+    transform: translateY(1px);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
+  }
+  .presetbar button.go {
+    background: linear-gradient(180deg, #00e5ff 0%, #009cb8 100%);
+    color: #03070d; 
+    border-color: #00e5ff; 
+    font-weight: 900;
+    box-shadow: 0 0 10px var(--cyan-glow), inset 0 1px 0 rgba(255,255,255,0.4);
+  }
+
+  /* ---------- MAIN WORKSPACE ---------- */
+  #main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 12px 115px;
+    -webkit-overflow-scrolling: touch;
+  }
+  #main::-webkit-scrollbar { width: 4px; }
+  #main::-webkit-scrollbar-thumb { background: var(--line-light); border-radius: 2px; }
+
+  /* OVERVIEW METER BRIDGE */
+  .overview { 
+    padding: 2px 2px 10px; 
+    margin-bottom: 8px; 
+    border-bottom: 1px solid rgba(30, 41, 59, 0.6); 
+  }
+  .ovlabel { 
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 8.5px; 
+    letter-spacing: .14em; 
+    color: var(--textdim); 
+    font-weight: 800; 
+    margin: 6px 0 5px; 
+  }
+  .ovlabel::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(30, 41, 59, 0.8), transparent);
+  }
+
+  .cardgrid.inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 4px; }
+  .cardgrid.outputs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 6px; }
+
+  .iocard {
+    background: linear-gradient(180deg, #141b27 0%, #0b0f17 100%);
+    border: 1px solid #1c2638;
+    border-radius: 6px;
+    padding: 6px 6px 7px;
+    position: relative;
+    cursor: pointer;
+    transition: all .15s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .iocard.selected {
+    border-color: var(--cyan);
+    background: linear-gradient(180deg, #172738 0%, #0b141f 100%);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.35), inset 0 0 6px rgba(0, 229, 255, 0.15);
+  }
+  .iocard.selected::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 15%; right: 15%;
+    height: 2px;
+    background: var(--cyan);
+    box-shadow: 0 0 6px var(--cyan);
+    border-radius: 0 0 2px 2px;
+  }
+  .iocard .nm { 
+    font-size: 9px; 
+    font-weight: 800; 
+    letter-spacing: .06em;
+    color: #94a3b8; 
+    margin-bottom: 4px; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+  }
+  .iocard.selected .nm {
+    color: var(--cyan);
+    text-shadow: 0 0 6px var(--cyan-glow);
+  }
+  .iocard .gainval { 
+    font-size: 11px; 
+    font-weight: 800; 
+    color: var(--amber); 
+    font-family: var(--mono);
+    margin-bottom: 4px; 
+  }
+  .iocard .badges { display: flex; gap: 3px; margin-bottom: 5px; }
+  .badge { 
+    font-size: 7px; 
+    font-weight: 800; 
+    padding: 1.5px 3.5px; 
+    border-radius: 3px; 
+    background: #090e17; 
+    color: #3e5066; 
+    border: 1px solid #162233;
+    letter-spacing: .04em;
+    line-height: 1;
+  }
+  .badge.lim-on { 
+    background: rgba(255, 201, 74, 0.2); 
+    border-color: #ffc94a;
+    color: #ffc94a; 
+    box-shadow: 0 0 6px rgba(255, 201, 74, 0.6);
+  }
+  .badge.mute-on { 
+    background: rgba(255, 51, 102, 0.25); 
+    border-color: #ff3366;
+    color: #ff3366; 
+    box-shadow: 0 0 6px rgba(255, 51, 102, 0.7);
+  }
+  .miniBarWrap { 
+    height: 5px; 
+    background: #04070c; 
+    border: 1px solid #121c29;
+    border-radius: 2px; 
+    overflow: hidden; 
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.9);
+    padding: 0.5px;
+  }
+  .miniBar { 
+    height: 100%; 
+    width: 4%; 
+    border-radius: 1px; 
+    background: linear-gradient(90deg, #3ee89a 0%, #ffc94a 72%, #ff3366 92%); 
+    transition: width .1s linear; 
+  }
+
+  /* ---------- TAB WINDOWS ---------- */
+  .tab-window { display: none; width: 100%; animation: fadeIn 0.15s ease-out; }
+  .tab-window.active { display: block; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px; margin-bottom: 10px;
+  }
+  .panel h3 {
+    margin: 0 0 10px; font-size: 10.5px; letter-spacing: .12em; color: var(--mint);
+    font-weight: 700; text-transform: uppercase;
+  }
+
+  /* BUTTONS PRO */
+  .chsel { 
+    display: flex; 
+    gap: 6px; 
+    margin-bottom: 12px; 
+    background: #060910;
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid #141c29;
+    box-shadow: inset 0 1px 4px rgba(0,0,0,0.8);
+  }
+  .chsel button {
+    flex: 1; 
+    padding: 9px 0; 
+    background: linear-gradient(180deg, #151d2a 0%, #0b1018 100%); 
+    border: 1px solid #1b2636;
+    border-radius: 6px; 
+    color: #64748b; 
+    font-size: 10.5px; 
+    font-weight: 800;
+    font-family: var(--mono); 
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
+    transition: all .15s ease;
+    position: relative;
+  }
+  .chsel button:active { transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); }
+  .chsel button.active {
+    background: linear-gradient(180deg, #12283a 0%, #081622 100%); 
+    border-color: var(--cyan);
+    color: var(--cyan); 
+    text-shadow: 0 0 8px var(--cyan-glow);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.35), inset 0 0 6px rgba(0, 229, 255, 0.15);
+  }
+  .chsel button.active::after {
+    content: '';
+    position: absolute;
+    top: -1px; left: 20%; right: 20%;
+    height: 2px;
+    background: var(--cyan);
+    box-shadow: 0 0 6px var(--cyan);
+    border-radius: 0 0 2px 2px;
+  }
+
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .toggle {
+    padding: 12px 6px; 
+    border-radius: 7px; 
+    background: linear-gradient(180deg, #151e2b 0%, #0b111a 100%); 
+    border: 1px solid #1c2738;
+    text-align: center; 
+    font-size: 11px; 
+    font-weight: 800; 
+    color: #64748b; 
+    font-family: var(--mono); 
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+    transition: all .12s ease;
+    position: relative;
+  }
+  .toggle:active { transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); }
+  .toggle.route-on { 
+    background: linear-gradient(180deg, #0e2b20 0%, #051610 100%); 
+    border-color: var(--mint); 
+    color: var(--mint); 
+    text-shadow: 0 0 8px rgba(62, 232, 154, 0.6);
+    box-shadow: 0 0 12px rgba(62, 232, 154, 0.35), inset 0 0 8px rgba(62, 232, 154, 0.18);
+  }
+  .toggle.route-on::after {
+    content: ''; position: absolute; top: 5px; right: 6px; width: 4px; height: 4px;
+    border-radius: 50%; background: var(--mint); box-shadow: 0 0 6px var(--mint);
+  }
+  .toggle.mute-on { 
+    background: linear-gradient(180deg, #3d0f1c 0%, #1c050c 100%); 
+    border-color: var(--red); color: var(--red); 
+    text-shadow: 0 0 8px rgba(255, 51, 102, 0.6);
+    box-shadow: 0 0 12px rgba(255, 51, 102, 0.4), inset 0 0 8px rgba(255, 51, 102, 0.2);
+  }
+  .toggle.mute-on::after {
+    content: ''; position: absolute; top: 5px; right: 6px; width: 4px; height: 4px;
+    border-radius: 50%; background: var(--red); box-shadow: 0 0 6px var(--red);
+  }
+
+  /* EQ TEMPLATE QUICK BAR */
+  .eq-tpl-wrap {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    background: #060910;
+    border: 1px solid #141c29;
+    border-radius: 7px;
+    padding: 6px 7px;
+    margin-bottom: 10px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);
+  }
+  .eq-tpl-wrap select {
+    flex: 1;
+    background: #0d131f;
+    border: 1px solid #1c2738;
+    color: var(--amber);
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 800;
+    padding: 7px 8px;
+    border-radius: 5px;
+    outline: none;
+    text-transform: uppercase;
+  }
+  .eq-tpl-wrap button {
+    background: linear-gradient(180deg, #ffc94a 0%, #d89b1c 100%);
+    color: #050a12;
+    border: 1px solid #ffc94a;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    font-weight: 900;
+    padding: 7px 11px;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(255, 201, 74, 0.35);
+    transition: all .12s ease;
+    white-space: nowrap;
+  }
+  .eq-tpl-wrap button:active {
+    transform: translateY(1px);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);
+  }
+
+  /* EQ TOOLBAR */
+  .eq-toolbar {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+  .eq-tool-btn {
+    padding: 7px 2px;
+    border-radius: 6px;
+    font-size: 9px;
+    font-weight: 800;
+    font-family: var(--mono);
+    cursor: pointer;
+    border: 1px solid #1f2d42;
+    background: linear-gradient(180deg, #162030 0%, #0c121d 100%);
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    transition: all .12s ease;
+  }
+  .eq-tool-btn:active { transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); }
+  .eq-tool-btn.bypass-active {
+    background: linear-gradient(180deg, #3d101d 0%, #1c050c 100%);
+    border-color: var(--red);
+    color: var(--red);
+    box-shadow: 0 0 10px rgba(255, 51, 102, 0.5);
+  }
+  .eq-tool-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .graph-hint {
+    font-size: 8px;
+    color: var(--textdim);
+    letter-spacing: .06em;
+    font-weight: 700;
+    text-align: center;
+    margin-top: 6px;
+  }
+
+  .step-group { display: flex; align-items: center; gap: 6px; }
+  .step-btn {
+    width: 26px; height: 22px; border-radius: 4px;
+    background: linear-gradient(180deg, #1e2a3c 0%, #0e1622 100%);
+    border: 1px solid #283950; color: var(--cyan);
+    font-size: 13px; font-weight: 900; font-family: var(--mono);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5); transition: all .1s ease;
+  }
+  .step-btn:active { transform: translateY(1px); background: var(--cyan); color: #04090e; }
+
+  .bandrow { 
+    display: grid; 
+    grid-template-columns: repeat(9, 1fr); 
+    gap: 4px; 
+    margin: 10px 0; 
+    background: #060910;
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid #141c29;
+    box-shadow: inset 0 1px 4px rgba(0,0,0,0.8);
+  }
+  .bandrow button {
+    aspect-ratio: 1; border-radius: 5px; 
+    background: linear-gradient(180deg, #151d2a 0%, #0b1018 100%); 
+    border: 1px solid #1c2738; color: #64748b; font-size: 10px; font-weight: 800; 
+    cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.5); transition: all .12s ease;
+  }
+  .bandrow button:active { transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); }
+  .bandrow button.active { 
+    background: linear-gradient(180deg, #00e5ff 0%, #009cb8 100%); 
+    color: #03070d; border-color: #00e5ff; 
+    box-shadow: 0 0 10px var(--cyan-glow); font-weight: 900;
+  }
+
+  /* FADER VERTIKAL */
+  .faderstrip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 6px 0; }
+  .fadercol { display: flex; flex-direction: column; align-items: center; }
+  .fadercol .flabel { font-size: 9px; letter-spacing: .1em; color: var(--mint); font-weight: 700; margin-bottom: 8px; }
+  .fadercol .fval { font-size: 11px; color: var(--amber); font-weight: 700; margin-top: 8px; font-family: var(--mono); }
+
+  .fadertrack {
+    position: relative; width: 44px; height: 165px; background: #080c14; 
+    border: 1px solid #1a2436; border-radius: 8px; display: flex; 
+    justify-content: center; align-items: center; box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.7);
+  }
+  .fadertrack::before { 
+    content: ''; position: absolute; top: 12px; bottom: 12px; left: 50%;
+    transform: translateX(-50%); width: 4px; background: #020408; 
+    border-left: 1px solid #000; border-right: 1px solid #1e2c40; border-radius: 2px;
+    pointer-events: none; z-index: 0;
+  }
+  .fadertrack::after {
+    content: ''; position: absolute; top: 18px; bottom: 18px; left: 4px; right: 4px;
+    background: repeating-linear-gradient(to bottom, transparent, transparent 18px, rgba(112, 132, 153, 0.25) 18px, rgba(112, 132, 153, 0.25) 20px);
+    pointer-events: none; z-index: 0;
+  }
+  input.vslider {
+    -webkit-appearance: none; appearance: none; 
+    writing-mode: vertical-lr; direction: rtl;
+    width: 38px; height: 148px; background: transparent; outline: none; 
+    margin: 0; padding: 0; z-index: 2; display: block; cursor: pointer;
+  }
+  input.vslider::-webkit-slider-runnable-track { width: 100%; background: transparent; border: none; }
+  input.vslider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 38px; height: 22px; border-radius: 4px;
+    background: linear-gradient(180deg, #24324a 0%, #121927 44%, #00e5ff 45%, #00e5ff 55%, #121927 56%, #24324a 100%);
+    border: 1.5px solid #06090e; box-shadow: 0 0 10px rgba(0, 229, 255, 0.5), 0 4px 8px rgba(0, 0, 0, 0.8); cursor: grab;
+  }
+  input.vslider::-webkit-slider-thumb:active { cursor: grabbing; box-shadow: 0 0 14px var(--cyan); }
+
+  /* SLIDER HORIZONTAL */
+  .sliderow { padding: 8px 2px 10px; }
+  .sliderow .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  input[type=range]:not(.vslider) {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 8px; border-radius: 4px; 
+    background: #06090f; border: 1px solid #1a2536; box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8);
+    outline: none; margin: 6px 0;
+  }
+  input[type=range]:not(.vslider)::-webkit-slider-runnable-track { height: 8px; background: transparent; }
+  input[type=range]:not(.vslider)::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 24px; height: 30px; margin-top: -12px; border-radius: 4px;
+    background: linear-gradient(90deg, #24324a 0%, #121927 43%, #00e5ff 45%, #00e5ff 55%, #121927 57%, #24324a 100%);
+    border: 1.5px solid #06090e; box-shadow: 0 0 10px rgba(0, 229, 255, 0.45), 0 4px 8px rgba(0, 0, 0, 0.8); cursor: grab;
+  }
+  input[type=range]:not(.vslider)::-webkit-slider-thumb:active { cursor: grabbing; transform: scale(1.06); box-shadow: 0 0 14px var(--cyan); }
+
+  /* PRESET MEMORY CARDS */
+  .presetlist { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  .preset-card {
+    background: linear-gradient(180deg, #151e2b 0%, #0b111a 100%);
+    border: 1px solid #1c2738; border-radius: 8px; padding: 8px 10px;
+    display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+    position: relative;
+  }
+  .preset-card.active-slot {
+    border-color: var(--cyan);
+    background: linear-gradient(180deg, #132435 0%, #08141f 100%);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.3), inset 0 0 6px rgba(0, 229, 255, 0.15);
+  }
+  .preset-card.active-slot::before {
+    content: ''; position: absolute; left: 0; top: 15%; bottom: 15%; width: 3px;
+    background: var(--cyan); box-shadow: 0 0 8px var(--cyan); border-radius: 0 2px 2px 0;
+  }
+  .preset-slot-id {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: #060910; border: 1px solid #162030; border-radius: 6px; padding: 4px 6px; min-width: 34px;
+  }
+  .preset-slot-id .slot-chip { font-size: 6.5px; font-weight: 900; color: var(--textdim); }
+  .preset-slot-id .slot-num { font-size: 13px; font-weight: 900; color: var(--cyan); font-family: var(--mono); line-height: 1.1; }
+  .preset-info { flex: 1; min-width: 0; }
+  .preset-title { font-size: 11px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .preset-card.active-slot .preset-title { color: #ffffff; text-shadow: 0 0 6px rgba(255,255,255,0.4); }
+  .preset-desc { font-size: 8.5px; color: var(--textdim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: none; }
+  .preset-actions { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+  .btn-action {
+    padding: 7px 9px; border-radius: 5px; font-size: 9.5px; font-weight: 800; font-family: var(--mono);
+    cursor: pointer; border: 1px solid #1c2738; background: linear-gradient(180deg, #182232 0%, #0d131e 100%);
+    color: var(--textdim); box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  }
+  .btn-action:active { transform: translateY(1px); }
+  .btn-action.btn-recall { color: var(--cyan); border-color: rgba(0, 229, 255, 0.4); }
+  .btn-action.active-label {
+    background: rgba(62, 232, 154, 0.15); border-color: var(--mint);
+    color: var(--mint); box-shadow: 0 0 8px rgba(62, 232, 154, 0.4); pointer-events: none;
+  }
+  .btn-action.btn-store { color: var(--amber); border-color: rgba(255, 201, 74, 0.4); }
+
+  /* GRAPH WRAPPER */
+  .graphwrap { background: #070a10; border-radius: 8px; border: 1px solid var(--line); padding: 8px; position: relative; }
+  .legend { display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 4px; }
+  .legend span { font-size: 8px; color: var(--textdim); display: flex; align-items: center; gap: 4px; }
+  .legend i { width: 7px; height: 7px; border-radius: 2px; display: inline-block; }
+  canvas { width: 100%; display: block; }
+
+  /* COMPRESSOR */
+  .complayout { display: flex; gap: 8px; margin-bottom: 8px; }
+  .compgraph { flex: 1; min-width: 0; }
+  .grmeter { width: 40px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .grmeter .glabel { font-size: 7.5px; color: var(--textdim); font-weight: 700; }
+  .grbarwrap { width: 14px; height: 140px; background: #06090e; border-radius: 4px; overflow: hidden; display: flex; align-items: flex-end; border: 1px solid var(--line); }
+  .grbarfill { width: 100%; background: linear-gradient(0deg, var(--mint), var(--amber) 60%, var(--red) 90%); height: 6%; transition: height .1s linear; }
+  .grval { font-size: 9px; color: var(--red); font-weight: 700; }
+  .compactive { display: inline-block; font-size: 8px; font-weight: 700; padding: 3px 8px; border-radius: 12px; background: rgba(62, 232, 154, 0.15); color: var(--mint); float: right; }
+  .compactive.off { background: #16202c; color: var(--textdim); }
+
+  /* BOTTOM NAVIGATION (7 TABS) */
+  #tabs {
+    position: absolute; bottom: 0; left: 0; right: 0; width: 100%;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 4px; padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 6px));
+    background: rgba(20, 25, 35, 0.95); backdrop-filter: blur(10px);
+    border-top: 1px solid var(--line); z-index: 50; box-shadow: 0 -8px 24px rgba(0,0,0,0.7);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s ease;
+  }
+  #tabs.hidden { transform: translateY(115%); opacity: 0; pointer-events: none; }
+  #tabs button {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; background: transparent; border: 1px solid transparent; border-radius: 6px;
+    color: var(--textdim); font-size: 9.5px; font-family: var(--mono); font-weight: 600;
+    padding: 6px 2px; line-height: 1; white-space: nowrap; cursor: pointer; transition: all .15s ease;
+  }
+  #tabs button svg { width: 18px; height: 18px; stroke-width: 2.2; transition: transform .15s ease; }
+  #tabs button.active {
+    color: var(--cyan); background: rgba(0, 229, 255, 0.08); border-color: rgba(0, 229, 255, 0.4); text-shadow: 0 0 8px var(--cyan-glow);
+  }
+  #tabs button.active svg { transform: scale(1.1); stroke: var(--cyan); filter: drop-shadow(0 0 6px var(--cyan)); }
+
+  /* VIRTUAL FLOATING BUTTON */
+  #tabToggleBtn {
+    position: absolute; bottom: 16px; right: 16px; width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(135deg, #182538 0%, #0a111a 100%);
+    border: 1.5px solid var(--cyan); color: var(--cyan); display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.8), 0 0 12px var(--cyan-glow); z-index: 60; cursor: pointer;
+    opacity: 0; transform: scale(0.6) translateY(20px); pointer-events: none;
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  #tabToggleBtn.show { opacity: 1; transform: scale(1) translateY(0); pointer-events: auto; }
+  #tabToggleBtn:active { transform: scale(0.92); }
+  #tabToggleBtn svg { width: 20px; height: 20px; stroke-width: 2.2; filter: drop-shadow(0 0 4px var(--cyan)); }
+
+  /* TOAST & MODAL */
+  #toast {
+    position: fixed; top: 68px; right: 12px; left: auto; transform: translateX(130%);
+    background: rgba(20, 27, 41, 0.95); backdrop-filter: blur(6px); border: 1px solid var(--cyan);
+    color: var(--cyan); padding: 8px 14px; border-radius: 8px; font-size: 10px; font-weight: 700;
+    letter-spacing: .06em; transition: transform .25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 1000; box-shadow: 0 6px 20px rgba(0,0,0,.7); pointer-events: none; max-width: 80%;
+  }
+  #toast.show { transform: translateX(0); }
+
+  .btn {
+    padding: 10px 6px; border-radius: 6px; border: 1px solid #1e2a3c;
+    background: linear-gradient(180deg, #16202e 0%, #0c121a 100%); color: var(--text);
+    font-size: 10px; font-weight: 800; cursor: pointer; text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5); transition: all .12s ease;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary {
+    background: linear-gradient(180deg, #00e5ff 0%, #009cb8 100%); color: #03070d;
+    border-color: #00e5ff; font-weight: 900; box-shadow: 0 0 10px var(--cyan-glow);
+  }
+
+  input.txt {
+    width: 100%; background: var(--panel2); border: 1px solid var(--line); color: var(--text);
+    font-family: var(--mono); font-size: 14px; padding: 10px; border-radius: 6px; user-select: text;
+    letter-spacing: .3em; text-align: center; outline: none;
+  }
+  input.txt:focus { border-color: var(--cyan); box-shadow: 0 0 8px var(--cyan-glow); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .hint { font-size: 9px; color: var(--textdim); line-height: 1.5; padding: 4px 2px 0; text-transform: none; letter-spacing: 0; }
+
+  .modal {
+    position: fixed; inset: 0; background: rgba(5,8,14,.85); backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center; z-index: 120; padding: 20px;
+  }
+  .modal.show { display: flex; }
+  .modal .box { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; width: 100%; max-width: 320px; }
+  .modal .msg { font-size: 11px; line-height: 1.5; color: var(--text); margin-bottom: 10px; text-transform: none; }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- TOP HEADER -->
+  <header>
+    <div class="brandrow">
+      <div class="brand">
+        <img src="./elkasariDSP.png" alt="ELIKASARI DSP S3" class="brand-logo">
+      </div>
+      <button class="connbtn" id="connBtn">
+        <span class="dot"></span>
+        <span id="connLabel">CONNECT</span>
+      </button>
+    </div>
+
+    <div class="presetbar">
+      <select id="presetQuickSel"></select>
+      <button id="quickLoadBtn">LOAD</button>
+      <button class="go" id="quickSaveBtn">SAVE</button>
+    </div>
+  </header>
+
+  <!-- MAIN SCROLLABLE WORKSPACE -->
+  <main id="main">
+    <!-- OVERVIEW METER BRIDGE -->
+    <div class="overview">
+      <div class="ovlabel">INPUT CHANNELS</div>
+      <div class="cardgrid inputs" id="inCards"></div>
+      <div class="ovlabel">OUTPUT CHANNELS (METER BRIDGE)</div>
+      <div class="cardgrid outputs" id="outCards"></div>
+    </div>
+
+    <!-- 7 KONTEN TAB WINDOW -->
+    <div class="tab-window active" id="content-matrix"></div>
+    <div class="tab-window" id="content-xover"></div>
+    <div class="tab-window" id="content-eq"></div>
+    <div class="tab-window" id="content-delay"></div>
+    <div class="tab-window" id="content-comp"></div>
+    <div class="tab-window" id="content-preset"></div>
+    <div class="tab-window" id="content-settings"></div>
+  </main>
+
+  <!-- BOTTOM NAVIGATION (7 TABS) -->
+  <nav id="tabs">
+    <button data-tab="matrix" class="active" title="Matrix">
+      <i data-lucide="grid-3x3"></i>
+      <span>Matrix</span>
+    </button>
+    <button data-tab="xover" title="Crossover">
+      <i data-lucide="split"></i>
+      <span>X-Over</span>
+    </button>
+    <button data-tab="eq" title="Equalizer + RTA">
+      <i data-lucide="sliders-horizontal"></i>
+      <span>EQ+RTA</span>
+    </button>
+    <button data-tab="delay" title="Delay">
+      <i data-lucide="hourglass"></i>
+      <span>Delay</span>
+    </button>
+    <button data-tab="comp" title="Compressor">
+      <i data-lucide="minimize-2"></i>
+      <span>Comp</span>
+    </button>
+    <button data-tab="preset" title="Preset">
+      <i data-lucide="save"></i>
+      <span>Preset</span>
+    </button>
+    <button data-tab="settings" title="Pengaturan">
+      <i data-lucide="sliders"></i>
+      <span>Setup</span>
+    </button>
+  </nav>
+
+  <!-- TOMBOL VIRTUAL TOGGLE -->
+  <button id="tabToggleBtn" title="Buka Menu Tab">
+    <i data-lucide="layout-grid"></i>
+  </button>
+
+</div>
+
+<div id="toast"></div>
+
+<!-- MODAL PIN -->
+<div id="pinModal" class="modal">
+  <div class="box">
+    <div class="msg" id="pinMsg"></div>
+    <input class="txt" id="pinModalInp" type="password" inputmode="numeric" maxlength="6" placeholder="------" autocomplete="off">
+    <div class="row2">
+      <button class="btn" id="pinCancel">BATAL</button>
+      <button class="btn primary" id="pinOk">MASUK</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDIT PRESET -->
+<div id="presetModal" class="modal">
+  <div class="box">
+    <div class="msg" style="color:var(--cyan); font-weight:800; letter-spacing:.1em; margin-bottom:12px;">
+      EDIT PRESET MEMORY
+    </div>
+    <input class="txt" id="presetNameInp" type="text" maxlength="22" placeholder="NAMA PRESET (MISAL: SUB 18 LAPANGAN)" style="text-align:left; letter-spacing:.05em; font-size:11px; margin-bottom:8px;">
+    <input class="txt" id="presetDescInp" type="text" maxlength="40" placeholder="KETERANGAN (MISAL: X-OVER 90HZ + DELAY)" style="text-align:left; letter-spacing:0; font-size:10px; color:var(--textdim); margin-bottom:12px;">
+    <div class="row2">
+      <button class="btn" id="presetModalCancel">BATAL</button>
+      <button class="btn primary" id="presetModalSave">SIMPAN</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   BLE PROTOCOL & CONSTANTS
+   ============================================================ */
+const SERVICE_UUID   = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
+const CHAR_CONTROL    = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
+const CHAR_STATUS     = 'beb5483e-36e1-4688-b7f5-ea07361b26a9';
+const CHAR_RTA        = 'beb5483e-36e1-4688-b7f5-ea07361b26aa';
+const CMD_AUTH        = 0x20;
+
+const CMD = {
+  SET_ROUTE:0x01, SET_GAIN:0x02, SET_MUTE:0x03, SET_XOVER_HPF:0x04, SET_XOVER_LPF:0x05,
+  SET_PEQ:0x06, SET_DELAY:0x07, SET_LIMITER:0x08, LOAD_PRESET:0x09, SAVE_PRESET:0x0A,
+  GET_ALL_STATUS:0x0B
+};
+
+let device=null, controlChar=null, connected=false, authed=false, statusSeen=false, hasStatusChar=false;
+let activeCh = 0;
+let activeBand = 0;
+let currentTab = 'matrix';
+
+// EQ PRO GLOBAL STATES
+let eqClipboard = null;
+let eqBypassState = [false, false, false, false];
+let eqBypassBackup = [null, null, null, null];
+
+const FREQ_ISO = [20,22,25,28,32,40,50,63,80,100,125,160,200,250,315,400,500,630,800,1000,1250,1600,2000,2500,3150,4000,5000,6300,8000,10000,12500,16000,20000];
+const OUT_NAMES = ['OUT 1', 'OUT 2', 'OUT 3', 'OUT 4'];
+
+/* ============================================================
+   EQ PRESET TEMPLATES (9-BAND PRO AUDIO CURVES)
+   ============================================================ */
+const EQ_TEMPLATES = {
+  flat: {
+    name: 'FLAT / LINEAR (0 dB)',
+    freqIdx: [6, 9, 13, 16, 19, 22, 25, 28, 31], // 50Hz, 100Hz, 250Hz, 500Hz, 1kHz, 2kHz, 4kHz, 8kHz, 16kHz
+    gain:    [0, 0, 0, 0, 0, 0, 0, 0, 0],          // 0.0 dB
+    q:       [10, 10, 10, 10, 10, 10, 10, 10, 10]  // Q = 1.0
+  },
+  bass_boost: {
+    name: 'BASS BOOST / SUB LAPANGAN',
+    freqIdx: [5, 7, 9, 13, 19, 23, 26, 29, 31],  // 40Hz, 63Hz, 100Hz, 250Hz, 1k, 2.5k, 5k, 10k, 16k
+    gain:    [+45, +60, +30, -35, 0, 0, +15, +25, +30],
+    q:       [14, 12, 10, 18, 10, 10, 10, 12, 10]
+  },
+  vocal_clarity: {
+    name: 'VOCAL CLARITY (BERSIH & LANTANG)',
+    freqIdx: [7, 10, 14, 16, 19, 23, 25, 28, 31], // 63Hz, 125Hz, 315Hz, 500Hz, 1k, 2.5k, 4k, 8k, 16k
+    gain:    [-60, -20, -30, -25, +10, +45, +35, +20, 0], 
+    q:       [18, 14, 16, 14, 10, 14, 12, 10, 10]
+  },
+  v_shape: {
+    name: 'V-SHAPE / CLUB DISCO DJ',
+    freqIdx: [6, 8, 11, 15, 18, 21, 24, 27, 30],  // 50Hz, 80Hz, 160Hz, 400Hz, 800Hz, 1.6k, 3.15k, 6.3k, 12.5k
+    gain:    [+50, +45, +15, -30, -40, -20, +15, +40, +50],
+    q:       [12, 12, 10, 12, 12, 10, 10, 12, 14]
+  },
+  subwoofer_punch: {
+    name: 'SUBWOOFER ONLY (PUNCH 45Hz)',
+    freqIdx: [4, 6, 8, 10, 12, 15, 18, 21, 25],   // 32Hz, 50Hz, 80Hz, 125Hz, 200Hz, 400Hz, 800Hz, 1.6k, 4k
+    gain:    [+20, +60, +50, +15, -40, -80, -100, -120, -120],
+    q:       [14, 16, 14, 12, 16, 20, 20, 20, 20]
+  },
+  bright_tweeter: {
+    name: 'BRIGHT AIR / TWEETER CRISP',
+    freqIdx: [16, 19, 22, 24, 26, 28, 29, 30, 31], // 500Hz, 1k, 2k, 3.15k, 5k, 8k, 10k, 12.5k, 16k
+    gain:    [-60, -40, -15, -30, +10, +30, +45, +50, +40],
+    q:       [10, 10, 12, 22, 10, 10, 12, 12, 10]
+  },
+  anti_feedback: {
+    name: 'NOTCH / ANTI-FEEDBACK DENGUNG',
+    freqIdx: [9, 13, 16, 19, 21, 23, 25, 27, 29],  // 100Hz, 250Hz, 500Hz, 1k, 1.6k, 2.5k, 4k, 6.3k, 10k
+    gain:    [0, -45, -50, -40, -55, -60, -50, -40, 0],
+    q:       [10, 30, 35, 30, 40, 45, 35, 30, 10]
+  }
+};
+
+function applyEqTemplate(templateKey) {
+  const tpl = EQ_TEMPLATES[templateKey];
+  if (!tpl) return;
+
+  for (let b = 0; b < 9; b++) {
+    state.peqFreqIdx[activeCh][b] = tpl.freqIdx[b];
+    state.peqGain[activeCh][b]    = tpl.gain[b];
+    state.peqQ[activeCh][b]       = tpl.q[b];
+  }
+
+  for (let b = 0; b < 9; b++) {
+    const payload = [
+      activeCh, 
+      b, 
+      state.peqFreqIdx[activeCh][b],
+      ...i16le(state.peqGain[activeCh][b]),
+      ...u16le(state.peqQ[activeCh][b])
+    ];
+    sendCmd(CMD.SET_PEQ, payload);
+  }
+
+  toast(`Template "${tpl.name}" terkirim ke ${OUT_NAMES[activeCh]}`);
+  render();
+}
+
+/* ============================================================
+   RTA FULL-BAND ENGINE (PRE & POST EQ DUAL LAYER)
+   ============================================================ */
+let rtaMode = 'BOTH'; // 'BOTH', 'PRE', 'POST', 'OFF'
+const NUM_BANDS = FREQ_ISO.length;
+let rtaPreDb = new Array(NUM_BANDS).fill(-60);
+let rtaPostDb = new Array(NUM_BANDS).fill(-60);
+let rtaPreTarget = new Array(NUM_BANDS).fill(-60);
+
+/* ============================================================
+   PRESET PROFILES (LOCAL STORAGE)
+   ============================================================ */
+const DEFAULT_PRESET_PROFILES = [
+  { name: 'FLAT / BYPASS (FOH)', desc: 'Stereo Linear Fullrange (20Hz - 20kHz)' },
+  { name: 'SUB + MID-HIGH (2.1)', desc: 'X-Over 100Hz • Subwoofer + Satellites' },
+  { name: 'CLUB / BASS BOOST', desc: 'V-Shape EQ • Deep Bass & Crisp High' },
+  { name: 'LIVE BAND / VOCAL', desc: 'Warm Low-Mid • Limiter Protected' },
+  { name: 'OUTDOOR HIGH-POWER', desc: 'HPF 35Hz • Long Throw Brickwall' }
+];
+
+function getStoredPresets() {
+  try {
+    const saved = localStorage.getItem('elkasari_preset_profiles');
+    if (saved) return JSON.parse(saved);
+  } catch(e){}
+  return DEFAULT_PRESET_PROFILES;
+}
+
+let presetProfiles = getStoredPresets();
+let activePresetSlot = 0;
+
+const state = {
+  route:[0,1,2,2], gain:[0,0,0,0], mute:[false,false,false,false,false,false],
+  xoverHpf:[20,20,20,20], xoverLpf:[20000,20000,20000,20000],
+  peqFreqIdx:[[19,19,19,19,19,19,19,19,19],[19,19,19,19,19,19,19,19,19],[19,19,19,19,19,19,19,19,19],[19,19,19,19,19,19,19,19,19]],
+  peqGain:[[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0]],
+  peqQ:[[10,10,10,10,10,10,10,10,10],[10,10,10,10,10,10,10,10,10],[10,10,10,10,10,10,10,10,10],[10,10,10,10,10,10,10,10,10]],
+  delay:[0,0,0,0],
+  limThresh:[0,0,0,0], limRatio:[4,4,4,4], limAttack:[10,10,10,10], limRelease:[100,100,100,100],
+  presets: presetProfiles.map(p => p.name)
+};
+
+function saveStoredPresets() {
+  localStorage.setItem('elkasari_preset_profiles', JSON.stringify(presetProfiles));
+  state.presets = presetProfiles.map(p => p.name);
+  fillPresetQuickSel();
+}
+
+/* ---------------- BLE ENGINE ---------------- */
+const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
+const pinAscii = (pin)=>Array.from(pin).map(c=>c.charCodeAt(0));
+
+async function writeRaw(ch, arr, withResponse){
+  const buf = new Uint8Array(arr);
+  if(withResponse){
+    try{ if(ch.writeValueWithResponse) await ch.writeValueWithResponse(buf); else await ch.writeValue(buf); return; }
+    catch(e){ await ch.writeValueWithoutResponse(buf); return; }
+  }
+  try{ await ch.writeValueWithoutResponse(buf); }
+  catch(e){ await ch.writeValue(buf); }
+}
+
+function askPin(msg){
+  return new Promise((resolve)=>{
+    const m=document.getElementById('pinModal'), inp=document.getElementById('pinModalInp');
+    const okB=document.getElementById('pinOk'), cancelB=document.getElementById('pinCancel');
+    document.getElementById('pinMsg').textContent = msg;
+    inp.value=''; m.classList.add('show'); setTimeout(()=>inp.focus(),50);
+    const done=(v)=>{ m.classList.remove('show'); okB.onclick=cancelB.onclick=null; resolve(v); };
+    okB.onclick=()=>{ const v=inp.value.trim(); if(!/^\d{6}$/.test(v)){ toast('PIN harus 6 angka'); return; } done(v); };
+    cancelB.onclick=()=>done(null);
+  });
+}
+
+async function probeAccess(){
+  statusSeen=false;
+  await writeRaw(controlChar,[CMD.GET_ALL_STATUS]);
+  for(let i=0;i<20 && !statusSeen;i++) await sleep(100);
+  return statusSeen;
+}
+async function authenticate(pin){
+  await writeRaw(controlChar,[CMD_AUTH, ...pinAscii(pin)]);
+  await sleep(150);
+  return probeAccess();
+}
+
+async function connectBLE(){
+  if(!navigator.bluetooth){ toast('Web Bluetooth tidak didukung — gunakan Chrome Android'); return; }
+  try{
+    device = await navigator.bluetooth.requestDevice({
+      filters:[{ services:[SERVICE_UUID] }, { namePrefix:'EDSP' }, { namePrefix:'DLMS' }],
+      optionalServices:[SERVICE_UUID]
+    });
+    device.addEventListener('gattserverdisconnected', onDisconnected);
+    const server = await device.gatt.connect();
+    const service = await server.getPrimaryService(SERVICE_UUID);
+    controlChar = await service.getCharacteristic(CHAR_CONTROL);
+    hasStatusChar = false; authed = false;
+
+    try{
+      const statusChar = await service.getCharacteristic(CHAR_STATUS);
+      await statusChar.startNotifications();
+      statusChar.addEventListener('characteristicvaluechanged', onStatusNotify);
+      hasStatusChar = true;
+    }catch(e){}
+
+    try{
+      const rtaChar = await service.getCharacteristic(CHAR_RTA);
+      await rtaChar.startNotifications();
+      rtaChar.addEventListener('characteristicvaluechanged', onRtaNotify);
+    }catch(e){}
+
+    connected = true;
+    updateConnUI();
+
+    const saved = localStorage.getItem('dlms_pin');
+    if(saved && hasStatusChar) await writeRaw(controlChar,[CMD_AUTH, ...pinAscii(saved)]);
+    let ok = hasStatusChar ? await probeAccess() : true;
+    let msg = 'Alat ini dilindungi PIN Bluetooth. Masukkan 6 angka PIN.';
+    if(saved && !ok) msg = 'PIN tersimpan salah atau terkunci 30 detik. Masukkan PIN lagi.';
+    while(!ok){
+      const pin = await askPin(msg);
+      if(pin===null || !connected) break;
+      ok = await authenticate(pin);
+      if(ok) localStorage.setItem('dlms_pin', pin);
+      else msg = 'PIN salah (5x salah = terkunci 30 detik). Coba lagi.';
+    }
+    authed = ok;
+    updateConnUI();
+    toast(authed ? 'Terhubung ke board' : 'Terhubung, tapi terkunci PIN');
+    if(authed) sendCmd(CMD.GET_ALL_STATUS, []);
+  }catch(e){
+    toast('Gagal connect: ' + e.message);
+  }
+}
+
+function onDisconnected(){ connected=false; authed=false; sendQ.clear(); updateConnUI(); toast('Terputus dari board'); }
+function updateConnUI(){
+  const btn=document.getElementById('connBtn');
+  const lbl=document.getElementById('connLabel');
+  btn.classList.toggle('on', connected && authed);
+  lbl.textContent = connected ? (authed ? 'SYNCED' : 'LOCKED') : 'CONNECT';
+}
+
+const sendQ = new Map(); let sendBusy = false, sendSeq = 0, sendFailToast = 0;
+async function flushSendQ(){
+  sendBusy = true;
+  while(sendQ.size){
+    const k = sendQ.keys().next().value, arr = sendQ.get(k); sendQ.delete(k);
+    if(!connected || !controlChar) { sendQ.clear(); break; }
+    try{ await writeRaw(controlChar, arr, false); }
+    catch(e){ if(Date.now()-sendFailToast>2000){ sendFailToast=Date.now(); toast('Gagal kirim data'); } }
+    await sleep(12);
+  }
+  sendBusy = false;
+}
+function enqueue(key, cmd, payloadArr){
+  if(!connected || !controlChar){ toast('Belum terhubung ke board'); return; }
+  if(!authed){ toast('Alat terkunci PIN — buka tab SETUP'); return; }
+  sendQ.set(key, [cmd, ...payloadArr]);
+  if(!sendBusy) flushSendQ();
+}
+function sendCmd(cmd, payloadArr){ enqueue('c'+(++sendSeq), cmd, payloadArr); }
+function sendLive(key, cmd, payloadArr){ enqueue('live:'+key, cmd, payloadArr); }
+function i16le(v){ const b=new ArrayBuffer(2); new DataView(b).setInt16(0,v,true); return Array.from(new Uint8Array(b)); }
+function u16le(v){ const b=new ArrayBuffer(2); new DataView(b).setUint16(0,v,true); return Array.from(new Uint8Array(b)); }
+
+function onStatusNotify(e){
+  statusSeen = true;
+  const dv = e.target.value;
+  if(!dv) return;
+
+  // 1. JIKA MENERIMA PAKET PEQ CHANNEL (47 BYTE)
+  if(dv.byteLength === 47 && dv.getUint8(0) === 0x0C){
+    const ch = dv.getUint8(1);
+    if(ch < 4){
+      let p = 2;
+      for(let b = 0; b < 9; b++){
+        state.peqFreqIdx[ch][b] = dv.getUint8(p++);
+        state.peqGain[ch][b]    = dv.getInt16(p, true); p += 2;
+        state.peqQ[ch][b]       = dv.getUint16(p, true); p += 2;
+      }
+      if(currentTab === 'eq' && ch === activeCh){
+        drawEqBars();
+        const fIdx = state.peqFreqIdx[activeCh][activeBand];
+        const peqGain = state.peqGain[activeCh][activeBand] / 10;
+        const q = state.peqQ[activeCh][activeBand] / 10;
+        const fs = document.getElementById('peqFreqSlider');
+        const pgs = document.getElementById('peqGainSlider');
+        const qs = document.getElementById('peqQSlider');
+        if(fs) fs.value = fIdx;
+        if(pgs) pgs.value = peqGain;
+        if(qs) qs.value = q;
+        const fVal = document.getElementById('peqFreqVal');
+        const gVal = document.getElementById('peqGainVal');
+        const qVal = document.getElementById('peqQVal');
+        if(fVal) fVal.textContent = FREQ_ISO[fIdx] + ' Hz';
+        if(gVal) gVal.textContent = (peqGain > 0 ? '+' : '') + peqGain.toFixed(1) + ' dB';
+        if(qVal) qVal.textContent = q.toFixed(1);
+      }
+    }
+    return;
+  }
+
+  // 2. STATUS DASAR (29 BYTE: Gain, Xover, Mute)
+  if(dv.byteLength >= 29){
+    let p = 0;
+    for(let ch=0; ch<4; ch++) state.route[ch] = dv.getUint8(p++);
+    for(let ch=0; ch<4; ch++){ state.gain[ch] = dv.getInt16(p,true); p+=2; }
+    for(let ch=0; ch<4; ch++){ state.xoverHpf[ch] = dv.getUint16(p,true); p+=2; }
+    for(let ch=0; ch<4; ch++){ state.xoverLpf[ch] = dv.getUint16(p,true); p+=2; }
+    const mask = dv.getUint8(p);
+    for(let ch=0; ch<4; ch++) state.mute[ch+2] = !!(mask & (1<<(ch+2)));
+  }
+
+  if(currentTab!=='settings') render();
+  renderOverviewCards();
+}
+function refreshStatusSoon(){ setTimeout(()=>{ if(connected && authed) sendCmd(CMD.GET_ALL_STATUS, []); }, 500); }
+
+let meterVals = new Array(6).fill(0);
+function onRtaNotify(e){
+  const dv = e.target.value;
+  for(let i=0;i<dv.byteLength && i<6;i++) meterVals[i] = dv.getUint8(i);
+  updateMiniBars();
+
+  if (dv.byteLength >= 33) {
+    for (let i = 0; i < 33; i++) {
+      rtaPreTarget[i] = (dv.getUint8(i) / 255) * 60 - 60;
+    }
+  } else {
+    const inLevel = Math.max(meterVals[0], meterVals[1]);
+    const baseDb = (inLevel / 255) * 55 - 55;
+    for (let i = 0; i < NUM_BANDS; i++) {
+      const rolloff = (i / NUM_BANDS) * 8;
+      const jitter = (Math.sin(Date.now() / 80 + i) * 3);
+      rtaPreTarget[i] = (inLevel < 4) ? -60 : Math.max(-60, baseDb - rolloff + jitter);
+    }
+  }
+
+  if(currentTab==='comp') updateGrMeter();
+}
+
+// Smooth RTA Ballistics Animation Loop
+function rtaAnimationLoop() {
+  const attack = 0.45;
+  const decay = 0.08;
+
+  for (let i = 0; i < NUM_BANDS; i++) {
+    const target = rtaPreTarget[i];
+    if (target > rtaPreDb[i]) {
+      rtaPreDb[i] += (target - rtaPreDb[i]) * attack;
+    } else {
+      rtaPreDb[i] -= decay * 2.4;
+      if (rtaPreDb[i] < -60) rtaPreDb[i] = -60;
+    }
+
+    const eqDelta = getChannelEqGainAtFreq(activeCh, FREQ_ISO[i]);
+    rtaPostDb[i] = Math.max(-60, Math.min(6, rtaPreDb[i] + eqDelta));
+  }
+
+  if (currentTab === 'eq') {
+    drawEqBars();
+  }
+
+  requestAnimationFrame(rtaAnimationLoop);
+}
+requestAnimationFrame(rtaAnimationLoop);
+
+/* ---------------- TOAST ---------------- */
+let toastTimer=null;
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ---------------- OVERVIEW CARDS ---------------- */
+function renderOverviewCards(){
+  const inWrap = document.getElementById('inCards');
+  inWrap.innerHTML = `
+    <div class="iocard"><div class="nm">INPUT A (L)</div>
+      <div class="badges"><span class="badge">A2DP/LINE</span></div>
+      <div class="miniBarWrap"><div class="miniBar" id="mb0"></div></div>
+    </div>
+    <div class="iocard"><div class="nm">INPUT B (R)</div>
+      <div class="badges"><span class="badge">A2DP/LINE</span></div>
+      <div class="miniBarWrap"><div class="miniBar" id="mb1"></div></div>
+    </div>`;
+
+  const outWrap = document.getElementById('outCards');
+  let html = '';
+  for(let ch=0; ch<4; ch++){
+    const isSel = (ch===activeCh);
+    const isMuted = state.mute[ch+2];
+    const limActive = state.limRatio[ch] > 1.5;
+    html += `<div class="iocard ${isSel?'selected':''}" data-selch="${ch}">
+      <div class="nm">${OUT_NAMES[ch]}</div>
+      <div class="badges">
+        <span class="badge ${limActive?'lim-on':''}">LIM</span>
+        <span class="badge ${isMuted?'mute-on':''}">M</span>
+      </div>
+      <div class="gainval">${state.gain[ch]>0?'+':''}${state.gain[ch]}dB</div>
+      <div class="miniBarWrap"><div class="miniBar" id="mb${ch+2}"></div></div>
+    </div>`;
+  }
+  outWrap.innerHTML = html;
+  outWrap.querySelectorAll('[data-selch]').forEach(el=>{
+    el.addEventListener('click', ()=>{ activeCh = +el.dataset.selch; renderOverviewCards(); render(); });
+  });
+  updateMiniBars();
+}
+function updateMiniBars(){
+  for(let i=0;i<6;i++){
+    const el = document.getElementById('mb'+i);
+    if(el) el.style.width = Math.max(3, (meterVals[i]/255)*100) + '%';
+  }
+}
+
+/* ---------------- NAVIGATION TABS ---------------- */
+document.getElementById('tabs').addEventListener('click', (e)=>{
+  const b = e.target.closest('button');
+  if(!b) return;
+  const targetTab = b.dataset.tab;
+  if(!targetTab) return;
+
+  document.querySelectorAll('#tabs button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+
+  document.querySelectorAll('.tab-window').forEach(w => w.classList.remove('active'));
+  const win = document.getElementById('content-' + targetTab);
+  if(win) win.classList.add('active');
+
+  currentTab = targetTab;
+  render();
+});
+
+document.getElementById('connBtn').addEventListener('click', connectBLE);
+
+function fillPresetQuickSel(){
+  const sel = document.getElementById('presetQuickSel');
+  sel.innerHTML = presetProfiles.map((p,i)=>`
+    <option value="${i}" ${activePresetSlot===i?'selected':''}>[0${i+1}] ${p.name}</option>
+  `).join('');
+}
+
+document.getElementById('quickLoadBtn').addEventListener('click', ()=>{
+  const slot = +document.getElementById('presetQuickSel').value;
+  activePresetSlot = slot;
+  sendCmd(CMD.LOAD_PRESET,[slot]); 
+  toast('Memuat [0' + (slot+1) + '] ' + presetProfiles[slot].name); 
+  refreshStatusSoon();
+  render();
+});
+
+document.getElementById('quickSaveBtn').addEventListener('click', ()=>{
+  const slot = +document.getElementById('presetQuickSel').value;
+  sendCmd(CMD.SAVE_PRESET,[slot]); 
+  toast('Tersimpan ke Slot [0' + (slot+1) + ']');
+});
+
+function chSelector(count){
+  let html = '<div class="chsel">';
+  for(let i=0;i<count;i++){
+    html += `<button data-ch="${i}" class="${activeCh===i?'active':''}">${OUT_NAMES[i]}</button>`;
+  }
+  html += '</div>';
+  return html;
+}
+function bindChSelector(container){
+  container.querySelectorAll('.chsel button').forEach(b=>{
+    b.addEventListener('click', ()=>{ activeCh=+b.dataset.ch; render(); renderOverviewCards(); });
+  });
+}
+
+/* ---------------- RENDER DISPATCHER ---------------- */
+function render(){
+  if(currentTab==='matrix') renderMatrix();
+  else if(currentTab==='xover') renderXover();
+  else if(currentTab==='eq') renderEq();
+  else if(currentTab==='delay') renderDelay();
+  else if(currentTab==='comp') renderComp();
+  else if(currentTab==='preset') renderPreset();
+  else if(currentTab==='settings') renderSettings();
+
+  if(window.lucide) { lucide.createIcons(); }
+}
+
+/* 1. MATRIX ROUTING */
+function renderMatrix(){
+  const win = document.getElementById('content-matrix');
+  const routes=['LEFT','RIGHT','MIX L+R'];
+  let html = `<div class="panel"><h3>Matrix Routing — Output</h3>${chSelector(4)}<div class="grid3">`;
+  routes.forEach((r,i)=>{
+    html += `<button class="toggle ${state.route[activeCh]===i?'route-on':''}" data-route="${i}">${r}</button>`;
+  });
+  html += `</div><p class="hint">Pilih channel output, lalu tentukan sumber sinyal (Left, Right, atau gabungan).</p></div>`;
+  win.innerHTML = html;
+  bindChSelector(win);
+  win.querySelectorAll('[data-route]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const r=+b.dataset.route; state.route[activeCh]=r;
+      sendCmd(CMD.SET_ROUTE, [activeCh, r]); render();
+    });
+  });
+}
+
+/* ============================================================
+   2. CROSSOVER / CHANNEL STRIP (2-WAY JUJUR & PRESISI)
+   ============================================================ */
+function calcLR4Db(f, hpf, lpf, gain) {
+  let dbHp = 0;
+  if (hpf > 20) {
+    dbHp = -20 * Math.log10(1 + Math.pow(hpf / f, 4));
+  }
+  let dbLp = 0;
+  if (lpf < 20000) {
+    dbLp = -20 * Math.log10(1 + Math.pow(f / lpf, 4));
+  }
+  return gain + dbHp + dbLp;
+}
+
+function drawXoverGraph() {
+  const cv = document.getElementById('xoverCanvas');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  
+  const padTop = 14, padBot = 22, padLeft = 28, padRight = 12;
+  const plotW = W - padLeft - padRight;
+  const plotH = H - padTop - padBot;
+  
+  const minDb = -30, maxDb = 6;
+  const dbToY = (db) => padTop + ((maxDb - db) / (maxDb - minDb)) * plotH;
+  const lMin = Math.log10(20), lMax = Math.log10(20000);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // 1. Grid dB Horizontal (-30 s/d +6 dB)
+  const dBs = [6, 0, -6, -12, -18, -24, -30];
+  dBs.forEach(db => {
+    const y = dbToY(db);
+    ctx.strokeStyle = (db === 0) ? 'rgba(0, 229, 255, 0.4)' : 
+                      (db === -6) ? 'rgba(255, 201, 74, 0.4)' : 'rgba(30, 41, 59, 0.5)';
+    ctx.lineWidth = (db === 0 || db === -6) ? 1.5 : 1;
+    ctx.setLineDash(db === -6 ? [4, 3] : []);
+    ctx.beginPath();
+    ctx.moveTo(padLeft, y);
+    ctx.lineTo(W - padRight, y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = (db === -6) ? '#ffc94a' : '#708499';
+    ctx.font = '8.5px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText((db > 0 ? '+' : '') + db, padLeft - 4, y + 3);
+  });
+
+  // 2. Grid Frekuensi Vertikal (20 Hz - 20 kHz)
+  const fMarks = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000];
+  fMarks.forEach(f => {
+    const x = padLeft + ((Math.log10(f) - lMin) / (lMax - lMin)) * plotW;
+    ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, padTop);
+    ctx.lineTo(x, H - padBot);
+    ctx.stroke();
+
+    const txt = f >= 1000 ? (f / 1000) + 'k' : '' + f;
+    ctx.fillStyle = '#708499';
+    ctx.font = '8.5px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(txt, x, H - 6);
+  });
+
+  // 3. Ambil Frekuensi Crossover Asli DSP
+  const hpfFreq = state.xoverHpf[0];
+  const lpfFreq = state.xoverLpf[2];
+  const isHighActive = (activeCh === 0 || activeCh === 1);
+
+  // KURVA 1: SUBWOOFER (OUT 3 & 4)
+  ctx.beginPath();
+  ctx.strokeStyle = !isHighActive ? '#00e5ff' : '#007c8a';
+  ctx.lineWidth = !isHighActive ? 2.5 : 1.5;
+  if (!isHighActive) { ctx.shadowColor = '#00e5ff'; ctx.shadowBlur = 8; }
+
+  for (let px = 0; px <= plotW; px += 2) {
+    const f = Math.pow(10, lMin + (px / plotW) * (lMax - lMin));
+    let db = (lpfFreq < 20000) ? -20 * Math.log10(1 + Math.pow(f / lpfFreq, 4)) : 0;
+    db = Math.max(minDb, Math.min(maxDb, db));
+    const py = dbToY(db);
+    if (px === 0) ctx.moveTo(padLeft + px, py); else ctx.lineTo(padLeft + px, py);
+  }
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // KURVA 2: MAIN HIGH (OUT 1 & 2)
+  ctx.beginPath();
+  ctx.strokeStyle = isHighActive ? '#ff3366' : '#7a1c33';
+  ctx.lineWidth = isHighActive ? 2.5 : 1.5;
+  if (isHighActive) { ctx.shadowColor = '#ff3366'; ctx.shadowBlur = 8; }
+
+  for (let px = 0; px <= plotW; px += 2) {
+    const f = Math.pow(10, lMin + (px / plotW) * (lMax - lMin));
+    let db = (hpfFreq > 20) ? -20 * Math.log10(1 + Math.pow(hpfFreq / f, 4)) : 0;
+    db = Math.max(minDb, Math.min(maxDb, db));
+    const py = dbToY(db);
+    if (px === 0) ctx.moveTo(padLeft + px, py); else ctx.lineTo(padLeft + px, py);
+  }
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  ctx.fillStyle = '#ffc94a';
+  ctx.font = 'bold 9px monospace';
+  ctx.textAlign = 'center';
+  const xCutH = padLeft + ((Math.log10(hpfFreq) - lMin) / (lMax - lMin)) * plotW;
+  const xCutL = padLeft + ((Math.log10(lpfFreq) - lMin) / (lMax - lMin)) * plotW;
+  ctx.fillText('HPF:' + hpfFreq + 'Hz', Math.max(padLeft + 35, Math.min(W - 40, xCutH)), dbToY(-6) - 8);
+  ctx.fillText('LPF:' + lpfFreq + 'Hz', Math.max(padLeft + 35, Math.min(W - 40, xCutL)), dbToY(-6) + 16);
+}
+
+function renderXover(){
+  const win = document.getElementById('content-xover');
+  const hpf=state.xoverHpf[activeCh], lpf=state.xoverLpf[activeCh], gain=state.gain[activeCh];
+
+  const legendHtml = `
+    <div class="legend" style="justify-content:center; gap:8px; margin-bottom:6px;">
+      <span style="color:${activeCh===0?'#ff3366':'#708499'};"><i style="background:#ff3366"></i>OUT 1 HIGH</span>
+      <span style="color:${activeCh===2?'#00e5ff':'#708499'};"><i style="background:#00e5ff"></i>OUT 3 LOW</span>
+    </div>
+  `;
+
+  win.innerHTML = `
+    <div class="panel">${chSelector(4)}
+      <div class="toggle ${state.mute[activeCh+2]?'mute-on':''}" id="stripMuteBtn" style="text-align:center;">
+        ${state.mute[activeCh+2] ? 'MUTED' : 'MUTE '+OUT_NAMES[activeCh]}
+      </div>
+    </div>
+    
+    <div class="panel">
+      <h3>Crossover Alignment Graph 2way OUT_1 & OUT_3 (LR-24dB)</h3>
+      ${legendHtml}
+      <div class="graphwrap">
+        <canvas id="xoverCanvas" width="600" height="220"></canvas>
+      </div>
+      <p class="graph-hint" style="color:var(--textdim); margin-top:5px;">
+        Titik potong antar channel bertemu di <b style="color:var(--amber);">-6.0 dB</b> untuk penjumlahan respon rata (Flat Sum).
+      </p>
+    </div>
+
+    <div class="panel"><h3>Channel Strip — ${OUT_NAMES[activeCh]}</h3>
+      <div class="faderstrip">
+        <div class="fadercol">
+          <div class="flabel">GAIN</div>
+          <div class="fadertrack"><input type="range" class="vslider" orient="vertical" min="-40" max="6" step="1" value="${gain}" id="gainSlider"></div>
+          <div class="fval" id="gainVal">${gain>0?'+':''}${gain}dB</div>
+        </div>
+        <div class="fadercol">
+          <div class="flabel">HPF</div>
+          <div class="fadertrack"><input type="range" class="vslider" orient="vertical" min="20" max="2000" step="1" value="${hpf}" id="hpfSlider"></div>
+          <div class="fval" id="hpfVal">${hpf}Hz</div>
+        </div>
+        <div class="fadercol">
+          <div class="flabel">LPF</div>
+          <div class="fadertrack"><input type="range" class="vslider" orient="vertical" min="200" max="20000" step="10" value="${lpf}" id="lpfSlider"></div>
+          <div class="fval" id="lpfVal">${lpf}Hz</div>
+        </div>
+      </div>
+      <p class="hint">Filter Linkwitz-Riley 24dB/oct. Geser ke atas untuk menaikkan nilai.</p>
+    </div>`;
+
+  bindChSelector(win);
+  drawXoverGraph();
+
+  win.querySelector('#stripMuteBtn').addEventListener('click', ()=>{
+    const idx = activeCh+2;
+    state.mute[idx] = !state.mute[idx];
+    let mask=0; state.mute.forEach((m,i)=>{ if(m) mask |= (1<<i); });
+    sendCmd(CMD.SET_MUTE, [mask]); render(); renderOverviewCards();
+  });
+
+  const gs=win.querySelector('#gainSlider');
+  gs.addEventListener('input', ()=>{
+    win.querySelector('#gainVal').textContent = (gs.value>0?'+':'')+gs.value+'dB';
+    state.gain[activeCh]=+gs.value; sendLive('gain'+activeCh, CMD.SET_GAIN,[activeCh,...i16le(+gs.value)]);
+    drawXoverGraph();
+  });
+  gs.addEventListener('change', ()=>{ state.gain[activeCh]=+gs.value; sendCmd(CMD.SET_GAIN,[activeCh,...i16le(+gs.value)]); renderOverviewCards(); drawXoverGraph(); });
+
+  const hs=win.querySelector('#hpfSlider');
+  hs.addEventListener('input', ()=>{
+    win.querySelector('#hpfVal').textContent = hs.value+'Hz';
+    state.xoverHpf[activeCh]=+hs.value; sendLive('hpf'+activeCh, CMD.SET_XOVER_HPF,[activeCh,...i16le(+hs.value)]);
+    drawXoverGraph();
+  });
+  hs.addEventListener('change', ()=>{ state.xoverHpf[activeCh]=+hs.value; sendCmd(CMD.SET_XOVER_HPF,[activeCh,...i16le(+hs.value)]); drawXoverGraph(); });
+
+  const ls=win.querySelector('#lpfSlider');
+  ls.addEventListener('input', ()=>{
+    win.querySelector('#lpfVal').textContent = ls.value+'Hz';
+    state.xoverLpf[activeCh]=+ls.value; sendLive('lpf'+activeCh, CMD.SET_XOVER_LPF,[activeCh,...i16le(+ls.value)]);
+    drawXoverGraph();
+  });
+  ls.addEventListener('change', ()=>{ state.xoverLpf[activeCh]=+ls.value; sendCmd(CMD.SET_XOVER_LPF,[activeCh,...i16le(+ls.value)]); drawXoverGraph(); });
+}
+
+/* ============================================================
+   3. EQUALIZER 9-BAND + RTA MINI BARS DISKRET (PRE & POST)
+   ============================================================ */
+function getChannelEqGainAtFreq(ch, freq) {
+  let totalDb = 0;
+  for (let b = 0; b < 9; b++) {
+    const f0 = FREQ_ISO[state.peqFreqIdx[ch][b]];
+    const gain = state.peqGain[ch][b] / 10;
+    const q = state.peqQ[ch][b] / 10;
+    totalDb += calcBiquadPeakDb(f0, gain, q, freq);
+  }
+  return totalDb;
+}
+
+function calcBiquadPeakDb(f0, gainDb, Q, f, fs = 48000) {
+  if (Math.abs(gainDb) < 0.05) return 0;
+  const A = Math.pow(10, gainDb / 40);
+  const w0 = 2 * Math.PI * f0 / fs;
+  const alpha = Math.sin(w0) / (2 * Q);
+  const cos_w0 = Math.cos(w0);
+
+  const b0 = 1 + alpha * A;
+  const b1 = -2 * cos_w0;
+  const b2 = 1 - alpha * A;
+  const a0 = 1 + alpha / A;
+  const a1 = -2 * cos_w0;
+  const a2 = 1 - alpha / A;
+
+  const w = 2 * Math.PI * f / fs;
+  const cw = Math.cos(w), sw = Math.sin(w);
+  const c2w = Math.cos(2 * w), s2w = Math.sin(2 * w);
+
+  const nr = b0 / a0 + (b1 / a0) * cw + (b2 / a0) * c2w;
+  const ni = -(b1 / a0) * sw - (b2 / a0) * s2w;
+  const dr = 1 + (a1 / a0) * cw + (a2 / a0) * c2w;
+  const di = -(a1 / a0) * sw - (a2 / a0) * s2w;
+
+  const mag_sq = (nr * nr + ni * ni) / (dr * dr + di * di + 1e-20);
+  return 10 * Math.log10(Math.max(mag_sq, 1e-20));
+}
+
+function drawEqBars() {
+  const cv = document.getElementById('eqCanvas'); if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const padTop = 14, padBot = 22, padLeft = 14, padRight = 14;
+  const plotW = W - padLeft - padRight;
+  const plotH = H - padTop - padBot;
+  const midY = padTop + plotH / 2;
+  const lMin = Math.log10(20), lMax = Math.log10(20000);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Background Grid dB
+  const dBs = [12, 6, 0, -6, -12];
+  dBs.forEach(db => {
+    const y = midY - (db / 12) * (plotH / 2);
+    ctx.strokeStyle = (db === 0) ? 'rgba(0, 229, 255, 0.4)' : 'rgba(30, 41, 59, 0.6)';
+    ctx.lineWidth = (db === 0) ? 1.5 : 1;
+    ctx.beginPath(); ctx.moveTo(padLeft, y); ctx.lineTo(W - padRight, y); ctx.stroke();
+    ctx.fillStyle = '#708499'; ctx.font = '9px monospace'; ctx.textAlign = 'left';
+    if (db !== 0) ctx.fillText((db > 0 ? '+' : '') + db + 'dB', padLeft + 2, y - 2);
+  });
+
+  // Vertical Grid Frekuensi Logaritmik
+  const fMarks = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000];
+  fMarks.forEach(f => {
+    const x = padLeft + ((Math.log10(f) - lMin) / (lMax - lMin)) * plotW;
+    ctx.strokeStyle = 'rgba(30, 41, 59, 0.5)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, padTop); ctx.lineTo(x, H - padBot); ctx.stroke();
+    const txt = f >= 1000 ? (f / 1000) + 'k' : '' + f;
+    ctx.fillStyle = '#708499'; ctx.font = '9px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(txt, x, H - 6);
+  });
+
+  // ========================================================
+  // RTA DUAL-LAYER MINI BARS (BAR KECIL-KECIL DISKRET)
+  // ========================================================
+  if (rtaMode !== 'OFF') {
+    const baseY = H - padBot;
+    const maxBarH = plotH - 4;
+
+    for (let i = 0; i < NUM_BANDS; i++) {
+      const centerX = padLeft + ((Math.log10(FREQ_ISO[i]) - lMin) / (lMax - lMin)) * plotW;
+      
+      const preClamped = Math.max(-60, Math.min(0, rtaPreDb[i]));
+      const preH = Math.max(1, ((preClamped + 60) / 60) * maxBarH);
+
+      const postClamped = Math.max(-60, Math.min(6, rtaPostDb[i]));
+      const postH = Math.max(1, ((postClamped + 60) / 66) * maxBarH);
+
+      if (rtaMode === 'BOTH') {
+        const barW = 3.2; // Lebar bar kecil presisi
+        
+        // 1. Bar Kiri: PRE-EQ (Abu-abu / Slate Input)
+        ctx.fillStyle = 'rgba(112, 132, 153, 0.5)';
+        ctx.fillRect(centerX - barW - 0.5, baseY - preH, barW, preH);
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillRect(centerX - barW - 0.5, baseY - preH, barW, 1.5); // Peak cap
+
+        // 2. Bar Kanan: POST-EQ (Hijau Mint Glowing Output)
+        const grad = ctx.createLinearGradient(0, baseY, 0, baseY - postH);
+        grad.addColorStop(0, 'rgba(0, 229, 255, 0.7)');
+        grad.addColorStop(0.7, 'rgba(62, 232, 154, 0.85)');
+        grad.addColorStop(1, '#ffc94a');
+        ctx.fillStyle = grad;
+        ctx.fillRect(centerX + 0.5, baseY - postH, barW, postH);
+        ctx.fillStyle = '#ffc94a';
+        ctx.fillRect(centerX + 0.5, baseY - postH, barW, 1.5); // Peak cap
+      } 
+      else if (rtaMode === 'PRE') {
+        const barW = 5;
+        ctx.fillStyle = 'rgba(148, 163, 184, 0.6)';
+        ctx.fillRect(centerX - barW / 2, baseY - preH, barW, preH);
+        ctx.fillStyle = '#cbd5e1';
+        ctx.fillRect(centerX - barW / 2, baseY - preH, barW, 2);
+      } 
+      else if (rtaMode === 'POST') {
+        const barW = 5;
+        const grad = ctx.createLinearGradient(0, baseY, 0, baseY - postH);
+        grad.addColorStop(0, '#00e5ff');
+        grad.addColorStop(0.8, '#3ee89a');
+        grad.addColorStop(1, '#ffc94a');
+        ctx.fillStyle = grad;
+        ctx.fillRect(centerX - barW / 2, baseY - postH, barW, postH);
+        ctx.fillStyle = '#ffc94a';
+        ctx.fillRect(centerX - barW / 2, baseY - postH, barW, 2);
+      }
+    }
+  }
+
+  // ========================================================
+  // EQ BIQUAD FILTER CURVE & NODES
+  // ========================================================
+  const bands = [];
+  for (let b = 0; b < 9; b++) {
+    bands.push({
+      freq: FREQ_ISO[state.peqFreqIdx[activeCh][b]],
+      gain: state.peqGain[activeCh][b] / 10,
+      q: state.peqQ[activeCh][b] / 10
+    });
+  }
+
+  // Garis Respons EQ (Neon Cyan)
+  ctx.beginPath();
+  ctx.strokeStyle = '#00e5ff';
+  ctx.lineWidth = 2.5;
+  ctx.shadowColor = '#00e5ff';
+  ctx.shadowBlur = 8;
+  for (let px = 0; px <= plotW; px += 2) {
+    const f = Math.pow(10, lMin + (px / plotW) * (lMax - lMin));
+    let totalDb = 0;
+    for (let b = 0; b < 9; b++) totalDb += calcBiquadPeakDb(bands[b].freq, bands[b].gain, bands[b].q, f);
+    const py = midY - (totalDb / 12) * (plotH / 2);
+    const clampedY = Math.max(padTop, Math.min(H - padBot, py));
+    if (px === 0) ctx.moveTo(padLeft + px, clampedY);
+    else ctx.lineTo(padLeft + px, clampedY);
+  }
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Render Titik Node 1-9
+  for (let b = 0; b < 9; b++) {
+    const f = bands[b].freq;
+    const x = padLeft + ((Math.log10(f) - lMin) / (lMax - lMin)) * plotW;
+    let totalDb = 0;
+    for (let k = 0; k < 9; k++) totalDb += calcBiquadPeakDb(bands[k].freq, bands[k].gain, bands[k].q, f);
+    const y = Math.max(padTop + 2, Math.min(H - padBot - 2, midY - (totalDb / 12) * (plotH / 2)));
+    const isActive = (b === activeBand);
+
+    if (isActive) {
+      ctx.beginPath();
+      ctx.arc(x, y, 9, 0, Math.PI * 2);
+      ctx.strokeStyle = '#ffc94a';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    ctx.beginPath();
+    ctx.arc(x, y, isActive ? 5 : 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = isActive ? '#ffc94a' : '#3ee89a';
+    ctx.fill();
+    ctx.strokeStyle = '#0b0c10';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    ctx.fillStyle = isActive ? '#ffc94a' : '#708499';
+    ctx.font = 'bold 9px monospace';
+    ctx.textAlign = 'center';
+    const labelY = (totalDb >= 0) ? y - 11 : y + 16;
+    ctx.fillText(b + 1, x, Math.max(padTop + 8, Math.min(H - padBot + 1, labelY)));
+  }
+}
+
+function renderEq(){
+  const win = document.getElementById('content-eq');
+  const fIdx = state.peqFreqIdx[activeCh][activeBand];
+  const peqGain = state.peqGain[activeCh][activeBand]/10;
+  const q = state.peqQ[activeCh][activeBand]/10;
+  const isBypassed = eqBypassState[activeCh];
+
+  let bands='<div class="bandrow">';
+  for(let b=0;b<9;b++) bands += `<button data-band="${b}" class="${activeBand===b?'active':''}">${b+1}</button>`;
+  bands += '</div>';
+
+  win.innerHTML = `
+    <div class="panel">${chSelector(4)}</div>
+    <div class="panel">
+      <!-- QUICK TEMPLATE PRESET SELECTOR -->
+      <div class="eq-tpl-wrap">
+        <select id="eqTplSelector">
+          <option value="" disabled selected>-- PILIH TEMPLATE EQUALIZER --</option>
+          <option value="flat">1. FLAT / LINEAR (RESET 0 dB)</option>
+          <option value="bass_boost">2. BASS BOOST / SUB LAPANGAN</option>
+          <option value="vocal_clarity">3. VOCAL CLARITY (BERSIH & LANTANG)</option>
+          <option value="v_shape">4. V-SHAPE / CLUB DISCO DJ</option>
+          <option value="subwoofer_punch">5. SUBWOOFER ONLY (PUNCH 45Hz)</option>
+          <option value="bright_tweeter">6. BRIGHT AIR / TWEETER CRISP</option>
+          <option value="anti_feedback">7. NOTCH / ANTI-FEEDBACK DENGUNG</option>
+        </select>
+        <button id="eqApplyTplBtn">TERAPKAN</button>
+      </div>
+
+      <!-- TOOLBAR PRO EQ -->
+      <div class="eq-toolbar">
+        <button class="eq-tool-btn ${isBypassed?'bypass-active':''}" id="eqBypassBtn">
+          <i data-lucide="power" style="width:12px;height:12px;"></i>
+          <span>${isBypassed ? 'BYPASS ON' : 'BYPASS'}</span>
+        </button>
+        <button class="eq-tool-btn" id="eqFlatBtn">
+          <i data-lucide="rotate-ccw" style="width:12px;height:12px;"></i>
+          <span>FLAT ALL</span>
+        </button>
+        <button class="eq-tool-btn" id="eqCopyBtn">
+          <i data-lucide="copy" style="width:12px;height:12px;"></i>
+          <span>COPY</span>
+        </button>
+        <button class="eq-tool-btn" id="eqPasteBtn" ${eqClipboard ? '' : 'disabled'}>
+          <i data-lucide="clipboard" style="width:12px;height:12px;"></i>
+          <span>PASTE</span>
+        </button>
+        <button class="eq-tool-btn" id="eqRtaToggleBtn" style="color:var(--cyan); border-color:rgba(0,229,255,0.4);">
+          <i data-lucide="activity" style="width:12px;height:12px;"></i>
+          <span id="rtaBtnLabel">RTA: ${rtaMode}</span>
+        </button>
+      </div>
+
+      <!-- GRAFIK EQ + RTA MINI BARS -->
+      <div class="graphwrap">
+        <div class="legend" style="justify-content: flex-end; gap: 8px; margin-bottom: 3px;">
+          <span><i style="background:#708499"></i>PRE (IN)</span>
+          <span><i style="background:#3ee89a"></i>POST (OUT)</span>
+          <span><i style="background:#00e5ff"></i>FILTER</span>
+        </div>
+        <canvas id="eqCanvas" width="600" height="230"></canvas>
+        <div class="graph-hint">PILIH BAND 1-9 &amp; ATUR NILAI FREK/GAIN/Q MENGGUNAKAN SLIDER DI BAWAH</div>
+      </div>
+
+      ${bands}
+
+      <!-- SLIDERS WITH STEP BUTTONS -->
+      <div class="sliderow">
+        <div class="top">
+          <span class="lbl">Frequency</span>
+          <div class="step-group">
+            <button class="step-btn" data-step="freq,-1">-</button>
+            <span class="val" id="peqFreqVal">${FREQ_ISO[fIdx]} Hz</span>
+            <button class="step-btn" data-step="freq,1">+</button>
+          </div>
+        </div>
+        <input type="range" min="0" max="32" step="1" value="${fIdx}" id="peqFreqSlider">
+      </div>
+
+      <div class="sliderow">
+        <div class="top">
+          <span class="lbl">Gain</span>
+          <div class="step-group">
+            <button class="step-btn" data-step="gain,-0.1">-</button>
+            <span class="val" id="peqGainVal">${peqGain>0?'+':''}${peqGain.toFixed(1)} dB</span>
+            <button class="step-btn" data-step="gain,0.1">+</button>
+          </div>
+        </div>
+        <input type="range" min="-12" max="12" step="0.1" value="${peqGain}" id="peqGainSlider">
+      </div>
+
+      <div class="sliderow">
+        <div class="top">
+          <span class="lbl">Q Factor (Bandwidth)</span>
+          <div class="step-group">
+            <button class="step-btn" data-step="q,-0.1">-</button>
+            <span class="val" id="peqQVal">${q.toFixed(1)}</span>
+            <button class="step-btn" data-step="q,0.1">+</button>
+          </div>
+        </div>
+        <input type="range" min="0.3" max="10" step="0.1" value="${q}" id="peqQSlider">
+      </div>
+    </div>`;
+
+  bindChSelector(win);
+  drawEqBars();
+
+  // Template Apply Event
+  win.querySelector('#eqApplyTplBtn').addEventListener('click', () => {
+    const selVal = win.querySelector('#eqTplSelector').value;
+    if (!selVal) {
+      toast('Pilih salah satu template terlebih dahulu');
+      return;
+    }
+    applyEqTemplate(selVal);
+  });
+
+  win.querySelectorAll('[data-band]').forEach(b=>{
+    b.addEventListener('click', ()=>{ activeBand=+b.dataset.band; render(); });
+  });
+
+  const fs=win.querySelector('#peqFreqSlider'), pgs=win.querySelector('#peqGainSlider'), qs=win.querySelector('#peqQSlider');
+
+  function peqPayload(bIdx = activeBand){
+    const freqIdx = state.peqFreqIdx[activeCh][bIdx];
+    const gainX10 = state.peqGain[activeCh][bIdx];
+    const qX10 = state.peqQ[activeCh][bIdx];
+    return [activeCh, bIdx, freqIdx, ...i16le(gainX10), ...u16le(qX10)];
+  }
+  function peqLive(bIdx = activeBand){ sendLive('peq'+activeCh+'_'+bIdx, CMD.SET_PEQ, peqPayload(bIdx)); }
+  function sendPeq(bIdx = activeBand){ sendCmd(CMD.SET_PEQ, peqPayload(bIdx)); drawEqBars(); }
+
+  fs.addEventListener('input', ()=>{
+    state.peqFreqIdx[activeCh][activeBand] = +fs.value;
+    win.querySelector('#peqFreqVal').textContent = FREQ_ISO[+fs.value]+' Hz';
+    peqLive(); drawEqBars();
+  });
+  pgs.addEventListener('input', ()=>{
+    const v = +pgs.value;
+    state.peqGain[activeCh][activeBand] = Math.round(v * 10);
+    win.querySelector('#peqGainVal').textContent = (v>0?'+':'')+v.toFixed(1)+' dB';
+    peqLive(); drawEqBars();
+  });
+  qs.addEventListener('input', ()=>{
+    const v = +qs.value;
+    state.peqQ[activeCh][activeBand] = Math.round(v * 10);
+    win.querySelector('#peqQVal').textContent = v.toFixed(1);
+    peqLive(); drawEqBars();
+  });
+
+  fs.addEventListener('change', () => sendPeq());
+  pgs.addEventListener('change', () => sendPeq());
+  qs.addEventListener('change', () => sendPeq());
+
+  win.querySelectorAll('.step-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const [param, val] = btn.dataset.step.split(',');
+      const stepVal = parseFloat(val);
+      if (param === 'freq') {
+        let cur = state.peqFreqIdx[activeCh][activeBand] + stepVal;
+        cur = Math.max(0, Math.min(32, cur));
+        state.peqFreqIdx[activeCh][activeBand] = cur;
+        fs.value = cur;
+        win.querySelector('#peqFreqVal').textContent = FREQ_ISO[cur] + ' Hz';
+      } else if (param === 'gain') {
+        let cur = (state.peqGain[activeCh][activeBand] / 10) + stepVal;
+        cur = Math.max(-12, Math.min(12, Math.round(cur * 10) / 10));
+        state.peqGain[activeCh][activeBand] = Math.round(cur * 10);
+        pgs.value = cur;
+        win.querySelector('#peqGainVal').textContent = (cur > 0 ? '+' : '') + cur.toFixed(1) + ' dB';
+      } else if (param === 'q') {
+        let cur = (state.peqQ[activeCh][activeBand] / 10) + stepVal;
+        cur = Math.max(0.3, Math.min(10, Math.round(cur * 10) / 10));
+        state.peqQ[activeCh][activeBand] = Math.round(cur * 10);
+        qs.value = cur;
+        win.querySelector('#peqQVal').textContent = cur.toFixed(1);
+      }
+      sendPeq();
+    });
+  });
+
+  // TOOLBAR EVENTS
+  win.querySelector('#eqBypassBtn').addEventListener('click', () => {
+    eqBypassState[activeCh] = !eqBypassState[activeCh];
+    if (eqBypassState[activeCh]) {
+      eqBypassBackup[activeCh] = [...state.peqGain[activeCh]];
+      state.peqGain[activeCh] = [0,0,0,0,0,0,0,0,0];
+      toast('EQ ' + OUT_NAMES[activeCh] + ' BYPASSED');
+    } else {
+      if (eqBypassBackup[activeCh]) state.peqGain[activeCh] = [...eqBypassBackup[activeCh]];
+      toast('EQ ' + OUT_NAMES[activeCh] + ' ACTIVE');
+    }
+    for (let b = 0; b < 9; b++) sendCmd(CMD.SET_PEQ, peqPayload(b));
+    render();
+  });
+
+  win.querySelector('#eqFlatBtn').addEventListener('click', () => {
+    state.peqGain[activeCh] = [0,0,0,0,0,0,0,0,0];
+    for (let b = 0; b < 9; b++) sendCmd(CMD.SET_PEQ, peqPayload(b));
+    toast('Semua band EQ direset ke 0.0 dB');
+    render();
+  });
+
+  win.querySelector('#eqCopyBtn').addEventListener('click', () => {
+    eqClipboard = {
+      freq: [...state.peqFreqIdx[activeCh]],
+      gain: [...state.peqGain[activeCh]],
+      q: [...state.peqQ[activeCh]]
+    };
+    toast('EQ disalin!');
+    render();
+  });
+
+  win.querySelector('#eqPasteBtn').addEventListener('click', () => {
+    if (!eqClipboard) return;
+    state.peqFreqIdx[activeCh] = [...eqClipboard.freq];
+    state.peqGain[activeCh] = [...eqClipboard.gain];
+    state.peqQ[activeCh] = [...eqClipboard.q];
+    for (let b = 0; b < 9; b++) sendCmd(CMD.SET_PEQ, peqPayload(b));
+    toast('EQ ditempelkan ke ' + OUT_NAMES[activeCh]);
+    render();
+  });
+
+  win.querySelector('#eqRtaToggleBtn').addEventListener('click', () => {
+    if (rtaMode === 'BOTH') rtaMode = 'PRE';
+    else if (rtaMode === 'PRE') rtaMode = 'POST';
+    else if (rtaMode === 'POST') rtaMode = 'OFF';
+    else rtaMode = 'BOTH';
+    document.getElementById('rtaBtnLabel').textContent = 'RTA: ' + rtaMode;
+    toast('Mode RTA: ' + rtaMode);
+    drawEqBars();
+  });
+}
+
+/* 4. DELAY */
+function renderDelay(){
+  const win = document.getElementById('content-delay');
+  const d = state.delay[activeCh];
+  win.innerHTML = `<div class="panel">${chSelector(4)}</div>
+    <div class="panel"><h3>Time Alignment Delay</h3>
+      <div class="sliderow"><div class="top"><span class="lbl">Delay Time</span>
+      <span class="val" id="delayVal">${d.toFixed(1)} ms</span></div>
+      <input type="range" min="0" max="300" step="0.1" value="${d}" id="delaySlider"></div>
+    </div>`;
+  bindChSelector(win);
+  const ds=win.querySelector('#delaySlider');
+  ds.addEventListener('input', ()=>{
+    win.querySelector('#delayVal').textContent = (+ds.value).toFixed(1)+' ms';
+    state.delay[activeCh]=+ds.value; sendLive('delay'+activeCh, CMD.SET_DELAY, [activeCh, ...i16le(Math.round(+ds.value*10))]);
+  });
+  ds.addEventListener('change', ()=>{
+    state.delay[activeCh]=+ds.value;
+    sendCmd(CMD.SET_DELAY, [activeCh, ...i16le(Math.round(+ds.value*10))]);
+  });
+}
+
+/* 5. COMPRESSOR / LIMITER */
+function renderComp(){
+  const win = document.getElementById('content-comp');
+  const th=state.limThresh[activeCh], ra=state.limRatio[activeCh], at=state.limAttack[activeCh], rl=state.limRelease[activeCh];
+  const active = ra > 1.5;
+  win.innerHTML = `<div class="panel">${chSelector(4)}</div>
+    <div class="panel">
+      <h3>Limiter / Compressor <span class="compactive ${active?'':'off'}">${active?'ACTIVE':'BYPASS'}</span></h3>
+      <div class="complayout">
+        <div class="compgraph"><canvas id="compCanvas" width="380" height="220"></canvas></div>
+        <div class="grmeter">
+          <span class="glabel">GR</span>
+          <div class="grbarwrap"><div class="grbarfill" id="grBarFill"></div></div>
+          <span class="grval" id="grValTxt">0.0</span>
+        </div>
+      </div>
+      <div class="sliderow"><div class="top"><span class="lbl">Threshold</span><span class="val" id="thVal">${th} dBFS</span></div>
+      <input type="range" min="-30" max="0" step="0.5" value="${th}" id="thSlider"></div>
+      <div class="sliderow"><div class="top"><span class="lbl">Ratio</span><span class="val" id="raVal">${ra>=50?'LIM':ra.toFixed(1)+':1'}</span></div>
+      <input type="range" min="1" max="100" step="0.5" value="${ra}" id="raSlider"></div>
+      <div class="sliderow"><div class="top"><span class="lbl">Attack</span><span class="val" id="atVal">${at} ms</span></div>
+      <input type="range" min="1" max="100" step="1" value="${at}" id="atSlider"></div>
+      <div class="sliderow"><div class="top"><span class="lbl">Release</span><span class="val" id="rlVal">${rl} ms</span></div>
+      <input type="range" min="10" max="5000" step="10" value="${rl}" id="rlSlider"></div>
+      <p class="hint">Ratio 1:1 = bypass/linier. Ratio &gt; 50:1 = Brickwall Limiter.</p>
+    </div>`;
+  bindChSelector(win);
+  drawCompCurve();
+  updateGrMeter();
+
+  const ths=win.querySelector('#thSlider'), ras=win.querySelector('#raSlider'), ats=win.querySelector('#atSlider'), rls=win.querySelector('#rlSlider');
+  ths.addEventListener('input', ()=>{ win.querySelector('#thVal').textContent = (+ths.value).toFixed(1)+' dBFS'; drawCompCurve(); });
+  ras.addEventListener('input', ()=>{ const v=+ras.value; win.querySelector('#raVal').textContent = v>=50?'LIM':v.toFixed(1)+':1'; drawCompCurve(); });
+  ats.addEventListener('input', ()=> win.querySelector('#atVal').textContent = ats.value+' ms');
+  rls.addEventListener('input', ()=> win.querySelector('#rlVal').textContent = rls.value+' ms');
+  function limPayload(){
+    state.limThresh[activeCh]=+ths.value; state.limRatio[activeCh]=+ras.value;
+    state.limAttack[activeCh]=+ats.value; state.limRelease[activeCh]=+rls.value;
+    return [activeCh, ...i16le(Math.round(+ths.value*10)), ...u16le(+ats.value), ...u16le(+rls.value), ...i16le(Math.round(+ras.value*10))];
+  }
+  function limLive(){ sendLive('lim'+activeCh, CMD.SET_LIMITER, limPayload()); }
+  ths.addEventListener('input', limLive); ras.addEventListener('input', limLive);
+  ats.addEventListener('input', limLive); rls.addEventListener('input', limLive);
+  function sendLim(){ sendCmd(CMD.SET_LIMITER, limPayload()); renderOverviewCards(); }
+  ths.addEventListener('change', sendLim); ras.addEventListener('change', sendLim);
+  ats.addEventListener('change', sendLim); rls.addEventListener('change', sendLim);
+}
+
+function drawCompCurve(){
+  const cv=document.getElementById('compCanvas'); if(!cv) return;
+  const ctx=cv.getContext('2d'); const W=cv.width, H=cv.height, PAD=24;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='rgba(30,41,59,0.5)'; ctx.lineWidth=1;
+  for(let i=1;i<4;i++){ const y=PAD+(H-PAD*2)/4*i; ctx.beginPath(); ctx.moveTo(PAD,y); ctx.lineTo(W-PAD,y); ctx.stroke(); }
+
+  const thSl=document.getElementById('thSlider'), raSl=document.getElementById('raSlider');
+  const th = thSl ? +thSl.value : state.limThresh[activeCh];
+  const ra = raSl ? +raSl.value : state.limRatio[activeCh];
+  const dbToXY=(db)=>{ const t=(db+60)/60; return [PAD+t*(W-PAD*2), H-PAD-t*(H-PAD*2)]; };
+
+  ctx.setLineDash([4,4]); ctx.strokeStyle='rgba(241,245,249,0.2)'; ctx.lineWidth=1;
+  ctx.beginPath(); let [x0,y0]=dbToXY(-60); ctx.moveTo(x0,y0); let [x1,y1]=dbToXY(0); ctx.lineTo(x1,y1); ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.strokeStyle='#00e5ff'; ctx.lineWidth=2.5; ctx.beginPath();
+  for(let px=0; px<=100; px++){
+    const inDb = -60 + (px/100)*60;
+    const outDb = inDb <= th ? inDb : th + (inDb - th)/ra;
+    const [x,y] = dbToXY(outDb);
+    const [xin] = dbToXY(inDb);
+    if(px===0) ctx.moveTo(xin,y); else ctx.lineTo(xin,y);
+  }
+  ctx.stroke();
+
+  const [tx,ty] = dbToXY(th);
+  ctx.fillStyle='#ffc94a'; ctx.beginPath(); ctx.arc(tx,ty,4,0,Math.PI*2); ctx.fill();
+}
+
+function updateGrMeter(){
+  const fill=document.getElementById('grBarFill'), txt=document.getElementById('grValTxt');
+  if(!fill) return;
+  const outIdx = 2+activeCh;
+  const lvlByte = meterVals[outIdx] || 0;
+  const dB = (lvlByte/255)*60 - 60;
+  const th=state.limThresh[activeCh], ra=state.limRatio[activeCh];
+  let gr = 0;
+  if(dB > th) gr = (dB - th) * (1 - 1/ra);
+  gr = Math.max(0, Math.min(24, gr));
+  fill.style.height = ((gr/24)*100).toFixed(0) + '%';
+  txt.textContent = '-' + gr.toFixed(1);
+}
+
+/* 6. PRESET MANAGER */
+function renderPreset(){
+  const win = document.getElementById('content-preset');
+  
+  let cardsHtml = '<div class="presetlist">';
+  presetProfiles.forEach((p, i) => {
+    const isLoaded = (activePresetSlot === i);
+    cardsHtml += `
+      <div class="preset-card ${isLoaded ? 'active-slot' : ''}">
+        <div class="preset-slot-id">
+          <span class="slot-chip">BANK</span>
+          <span class="slot-num">0${i+1}</span>
+        </div>
+        <div class="preset-info">
+          <div class="preset-title">${p.name}</div>
+          <div class="preset-desc">${p.desc}</div>
+        </div>
+        <div class="preset-actions">
+          <button class="btn-action" data-edit="${i}" title="Edit Info">
+            <i data-lucide="edit-3" style="width:13px;height:13px;"></i>
+          </button>
+          <button class="btn-action btn-store" data-save="${i}">STORE</button>
+          ${isLoaded 
+            ? `<span class="btn-action active-label">ACTIVE</span>` 
+            : `<button class="btn-action btn-recall" data-load="${i}">RECALL</button>`}
+        </div>
+      </div>`;
+  });
+  cardsHtml += '</div>';
+
+  win.innerHTML = `
+    <div class="panel">
+      <h3>Internal DSP Memory Banks (EEPROM)</h3>
+      ${cardsHtml}
+      <p class="hint">Tekan <b>RECALL</b> untuk memanggil preset, <b>STORE</b> untuk menyimpan settingan ke slot, atau tombol <b>pensil</b> untuk mengubah nama profil.</p>
+    </div>`;
+
+  win.querySelectorAll('[data-load]').forEach(b => {
+    b.addEventListener('click', () => {
+      const slot = +b.dataset.load;
+      activePresetSlot = slot;
+      sendCmd(CMD.LOAD_PRESET, [slot]);
+      toast('Memuat: ' + presetProfiles[slot].name);
+      refreshStatusSoon();
+      fillPresetQuickSel();
+      render();
+    });
+  });
+
+  win.querySelectorAll('[data-save]').forEach(b => {
+    b.addEventListener('click', () => {
+      const slot = +b.dataset.save;
+      sendCmd(CMD.SAVE_PRESET, [slot]);
+      toast('Tersimpan ke Slot [0' + (slot+1) + '] ' + presetProfiles[slot].name);
+    });
+  });
+
+  win.querySelectorAll('[data-edit]').forEach(b => {
+    b.addEventListener('click', () => {
+      openPresetEditModal(+b.dataset.edit);
+    });
+  });
+}
+
+let editingSlot = null;
+function openPresetEditModal(slotIndex) {
+  editingSlot = slotIndex;
+  const p = presetProfiles[slotIndex];
+  const modal = document.getElementById('presetModal');
+  const nameInp = document.getElementById('presetNameInp');
+  const descInp = document.getElementById('presetDescInp');
+
+  nameInp.value = p.name;
+  descInp.value = p.desc;
+  modal.classList.add('show');
+  setTimeout(() => nameInp.focus(), 50);
+
+  document.getElementById('presetModalCancel').onclick = () => modal.classList.remove('show');
+  document.getElementById('presetModalSave').onclick = () => {
+    const newName = nameInp.value.trim().toUpperCase();
+    if (!newName) { toast('Nama preset tidak boleh kosong'); return; }
+    presetProfiles[editingSlot].name = newName;
+    presetProfiles[editingSlot].desc = descInp.value.trim() || 'Custom Profile';
+    saveStoredPresets();
+    modal.classList.remove('show');
+    toast('Slot [0' + (editingSlot+1) + '] diperbarui');
+    render();
+  };
+}
+
+/* 7. SETTINGS / SETUP */
+function renderSettings(){
+  const win = document.getElementById('content-settings');
+  const savedPin = !!localStorage.getItem('dlms_pin');
+  win.innerHTML = `
+  <div class="panel"><h3>PIN Keamanan Bluetooth</h3>
+    <input class="txt" id="pinInp" type="password" inputmode="numeric" maxlength="6" placeholder="------" autocomplete="off">
+    <div class="row2">
+      <button class="btn primary" id="pinSend">KIRIM PIN</button>
+      <button class="btn" id="pinForget" ${savedPin?'':'disabled'}>LUPAKAN PIN</button>
+    </div>
+    <p class="hint">Status: ${connected ? (authed ? 'Terhubung &amp; Terbuka' : 'Terhubung, TERKUNCI') : 'Belum Terhubung'}${savedPin?' &middot; PIN tersimpan':''}.<br>
+    Pengaturan WiFi AP, nama BLE, dan ganti logo dapat diakses melalui web server board di 192.168.4.1 saat mode WiFi aktif.</p>
+  </div>`;
+  win.querySelector('#pinSend').onclick=async()=>{
+    const v=win.querySelector('#pinInp').value.trim();
+    if(!/^\d{6}$/.test(v)){ toast('PIN harus 6 angka'); return; }
+    if(!connected){ localStorage.setItem('dlms_pin', v); toast('PIN disimpan di HP'); renderSettings(); return; }
+    const ok = await authenticate(v);
+    if(ok){ localStorage.setItem('dlms_pin', v); authed=true; updateConnUI(); toast('PIN benar, akses dibuka'); sendCmd(CMD.GET_ALL_STATUS,[]); renderSettings(); }
+    else toast('PIN salah atau terkunci 30 detik');
+  };
+  win.querySelector('#pinForget').onclick=()=>{ localStorage.removeItem('dlms_pin'); toast('PIN dihapus'); renderSettings(); };
+}
+
+/* ---------------- AUTO-HIDE TABS ON SCROLL ---------------- */
+const mainWorkspace = document.getElementById('main');
+const tabsNav = document.getElementById('tabs');
+const virtualBtn = document.getElementById('tabToggleBtn');
+
+let lastScrollPosition = 0;
+const scrollTolerance = 15;
+
+mainWorkspace.addEventListener('scroll', () => {
+  const currentScroll = mainWorkspace.scrollTop;
+
+  if (currentScroll <= 10) {
+    tabsNav.classList.remove('hidden');
+    virtualBtn.classList.remove('show');
+    lastScrollPosition = currentScroll;
+    return;
+  }
+
+  if (currentScroll > lastScrollPosition + scrollTolerance) {
+    tabsNav.classList.add('hidden');
+    virtualBtn.classList.add('show');
+  } else if (currentScroll < lastScrollPosition - scrollTolerance) {
+    tabsNav.classList.remove('hidden');
+    virtualBtn.classList.remove('show');
+  }
+
+  lastScrollPosition = currentScroll;
+}, { passive: true });
+
+virtualBtn.addEventListener('click', () => {
+  const isHidden = tabsNav.classList.contains('hidden');
+  if (isHidden) {
+    tabsNav.classList.remove('hidden');
+    virtualBtn.classList.remove('show');
+  } else {
+    tabsNav.classList.add('hidden');
+    virtualBtn.classList.add('show');
+  }
+});
+
+/* ---------------- INIT ---------------- */
+fillPresetQuickSel();
+renderOverviewCards();
+render();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
