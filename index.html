@@ -75,19 +75,14 @@
     background: linear-gradient(180deg, #141923 0%, #0b0c10 100%);
   }
   .brandrow { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-/* Styling Logo Gambar di Header */
-  .brand {
-    display: flex;
-    align-items: center;
-  }
+  .brand { display: flex; align-items: center; }
 
   .brand-logo {
-    height: 52px;              /* Tinggi proporsional di layar HP */
-    max-width: 220px;          /* Batas lebar agar tidak mendesak tombol CONNECT */
+    height: 52px;
+    max-width: 220px;
     width: auto;
     object-fit: contain;
     display: block;
-    /* Pendaran cahaya (glow) halus pada logo agar menyala di tema gelap */
     filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.35));
   }
   .connbtn {
@@ -378,7 +373,51 @@
     border-radius: 50%; background: var(--red); box-shadow: 0 0 6px var(--red);
   }
 
-  /* EQ TOOLBAR & INTERACTIVE GRAPH */
+  /* EQ TEMPLATE QUICK BAR */
+  .eq-tpl-wrap {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    background: #060910;
+    border: 1px solid #141c29;
+    border-radius: 7px;
+    padding: 6px 7px;
+    margin-bottom: 10px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);
+  }
+  .eq-tpl-wrap select {
+    flex: 1;
+    background: #0d131f;
+    border: 1px solid #1c2738;
+    color: var(--amber);
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 800;
+    padding: 7px 8px;
+    border-radius: 5px;
+    outline: none;
+    text-transform: uppercase;
+  }
+  .eq-tpl-wrap button {
+    background: linear-gradient(180deg, #ffc94a 0%, #d89b1c 100%);
+    color: #050a12;
+    border: 1px solid #ffc94a;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    font-weight: 900;
+    padding: 7px 11px;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(255, 201, 74, 0.35);
+    transition: all .12s ease;
+    white-space: nowrap;
+  }
+  .eq-tpl-wrap button:active {
+    transform: translateY(1px);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);
+  }
+
+  /* EQ TOOLBAR */
   .eq-toolbar {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -413,12 +452,11 @@
 
   .graph-hint {
     font-size: 8px;
-    color: var(--cyan);
+    color: var(--textdim);
     letter-spacing: .06em;
-    font-weight: 800;
+    font-weight: 700;
     text-align: center;
     margin-top: 6px;
-    text-shadow: 0 0 6px rgba(0, 229, 255, 0.4);
   }
 
   .step-group { display: flex; align-items: center; gap: 6px; }
@@ -567,7 +605,7 @@
   .compactive { display: inline-block; font-size: 8px; font-weight: 700; padding: 3px 8px; border-radius: 12px; background: rgba(62, 232, 154, 0.15); color: var(--mint); float: right; }
   .compactive.off { background: #16202c; color: var(--textdim); }
 
-  /* BOTTOM NAVIGATION (7 TABS - RTA PINDAH KE DALAM EQ) */
+  /* BOTTOM NAVIGATION (7 TABS) */
   #tabs {
     position: absolute; bottom: 0; left: 0; right: 0; width: 100%;
     display: grid; grid-template-columns: repeat(4, 1fr);
@@ -648,9 +686,8 @@
 
   <!-- TOP HEADER -->
   <header>
-      <div class="brandrow">
+    <div class="brandrow">
       <div class="brand">
-        <!-- GANTI DENGAN LOGO GAMBAR -->
         <img src="./elkasariDSP.png" alt="ELIKASARI DSP S3" class="brand-logo">
       </div>
       <button class="connbtn" id="connBtn">
@@ -658,7 +695,6 @@
         <span id="connLabel">CONNECT</span>
       </button>
     </div>
-
 
     <div class="presetbar">
       <select id="presetQuickSel"></select>
@@ -780,11 +816,82 @@ let currentTab = 'matrix';
 let eqClipboard = null;
 let eqBypassState = [false, false, false, false];
 let eqBypassBackup = [null, null, null, null];
-let isDraggingNode = false;
-let draggedBandIdx = null;
 
 const FREQ_ISO = [20,22,25,28,32,40,50,63,80,100,125,160,200,250,315,400,500,630,800,1000,1250,1600,2000,2500,3150,4000,5000,6300,8000,10000,12500,16000,20000];
 const OUT_NAMES = ['OUT 1', 'OUT 2', 'OUT 3', 'OUT 4'];
+
+/* ============================================================
+   EQ PRESET TEMPLATES (9-BAND PRO AUDIO CURVES)
+   ============================================================ */
+const EQ_TEMPLATES = {
+  flat: {
+    name: 'FLAT / LINEAR (0 dB)',
+    freqIdx: [6, 9, 13, 16, 19, 22, 25, 28, 31], // 50Hz, 100Hz, 250Hz, 500Hz, 1kHz, 2kHz, 4kHz, 8kHz, 16kHz
+    gain:    [0, 0, 0, 0, 0, 0, 0, 0, 0],          // 0.0 dB
+    q:       [10, 10, 10, 10, 10, 10, 10, 10, 10]  // Q = 1.0
+  },
+  bass_boost: {
+    name: 'BASS BOOST / SUB LAPANGAN',
+    freqIdx: [5, 7, 9, 13, 19, 23, 26, 29, 31],  // 40Hz, 63Hz, 100Hz, 250Hz, 1k, 2.5k, 5k, 10k, 16k
+    gain:    [+45, +60, +30, -35, 0, 0, +15, +25, +30],
+    q:       [14, 12, 10, 18, 10, 10, 10, 12, 10]
+  },
+  vocal_clarity: {
+    name: 'VOCAL CLARITY (BERSIH & LANTANG)',
+    freqIdx: [7, 10, 14, 16, 19, 23, 25, 28, 31], // 63Hz, 125Hz, 315Hz, 500Hz, 1k, 2.5k, 4k, 8k, 16k
+    gain:    [-60, -20, -30, -25, +10, +45, +35, +20, 0], 
+    q:       [18, 14, 16, 14, 10, 14, 12, 10, 10]
+  },
+  v_shape: {
+    name: 'V-SHAPE / CLUB DISCO DJ',
+    freqIdx: [6, 8, 11, 15, 18, 21, 24, 27, 30],  // 50Hz, 80Hz, 160Hz, 400Hz, 800Hz, 1.6k, 3.15k, 6.3k, 12.5k
+    gain:    [+50, +45, +15, -30, -40, -20, +15, +40, +50],
+    q:       [12, 12, 10, 12, 12, 10, 10, 12, 14]
+  },
+  subwoofer_punch: {
+    name: 'SUBWOOFER ONLY (PUNCH 45Hz)',
+    freqIdx: [4, 6, 8, 10, 12, 15, 18, 21, 25],   // 32Hz, 50Hz, 80Hz, 125Hz, 200Hz, 400Hz, 800Hz, 1.6k, 4k
+    gain:    [+20, +60, +50, +15, -40, -80, -100, -120, -120],
+    q:       [14, 16, 14, 12, 16, 20, 20, 20, 20]
+  },
+  bright_tweeter: {
+    name: 'BRIGHT AIR / TWEETER CRISP',
+    freqIdx: [16, 19, 22, 24, 26, 28, 29, 30, 31], // 500Hz, 1k, 2k, 3.15k, 5k, 8k, 10k, 12.5k, 16k
+    gain:    [-60, -40, -15, -30, +10, +30, +45, +50, +40],
+    q:       [10, 10, 12, 22, 10, 10, 12, 12, 10]
+  },
+  anti_feedback: {
+    name: 'NOTCH / ANTI-FEEDBACK DENGUNG',
+    freqIdx: [9, 13, 16, 19, 21, 23, 25, 27, 29],  // 100Hz, 250Hz, 500Hz, 1k, 1.6k, 2.5k, 4k, 6.3k, 10k
+    gain:    [0, -45, -50, -40, -55, -60, -50, -40, 0],
+    q:       [10, 30, 35, 30, 40, 45, 35, 30, 10]
+  }
+};
+
+function applyEqTemplate(templateKey) {
+  const tpl = EQ_TEMPLATES[templateKey];
+  if (!tpl) return;
+
+  for (let b = 0; b < 9; b++) {
+    state.peqFreqIdx[activeCh][b] = tpl.freqIdx[b];
+    state.peqGain[activeCh][b]    = tpl.gain[b];
+    state.peqQ[activeCh][b]       = tpl.q[b];
+  }
+
+  for (let b = 0; b < 9; b++) {
+    const payload = [
+      activeCh, 
+      b, 
+      state.peqFreqIdx[activeCh][b],
+      ...i16le(state.peqGain[activeCh][b]),
+      ...u16le(state.peqQ[activeCh][b])
+    ];
+    sendCmd(CMD.SET_PEQ, payload);
+  }
+
+  toast(`Template "${tpl.name}" terkirim ke ${OUT_NAMES[activeCh]}`);
+  render();
+}
 
 /* ============================================================
    RTA FULL-BAND ENGINE (PRE & POST EQ DUAL LAYER)
@@ -876,7 +983,7 @@ async function connectBLE(){
   if(!navigator.bluetooth){ toast('Web Bluetooth tidak didukung — gunakan Chrome Android'); return; }
   try{
     device = await navigator.bluetooth.requestDevice({
-filters:[{ services:[SERVICE_UUID] }, { namePrefix:'EDSP' }, { namePrefix:'DLMS' }],
+      filters:[{ services:[SERVICE_UUID] }, { namePrefix:'EDSP' }, { namePrefix:'DLMS' }],
       optionalServices:[SERVICE_UUID]
     });
     device.addEventListener('gattserverdisconnected', onDisconnected);
@@ -968,10 +1075,8 @@ function onStatusNotify(e){
         state.peqGain[ch][b]    = dv.getInt16(p, true); p += 2;
         state.peqQ[ch][b]       = dv.getUint16(p, true); p += 2;
       }
-      // Jika channel yang diterima adalah channel yang sedang dibuka di layar EQ, gambar ulang kurvanya!
       if(currentTab === 'eq' && ch === activeCh){
         drawEqBars();
-        // Update slider ke posisi band aktif
         const fIdx = state.peqFreqIdx[activeCh][activeBand];
         const peqGain = state.peqGain[activeCh][activeBand] / 10;
         const q = state.peqQ[activeCh][activeBand] / 10;
@@ -992,7 +1097,7 @@ function onStatusNotify(e){
     return;
   }
 
-  // 2. JIKA MENERIMA PAKET STATUS DASAR (29 BYTE: Gain, Xover, Mute)
+  // 2. STATUS DASAR (29 BYTE: Gain, Xover, Mute)
   if(dv.byteLength >= 29){
     let p = 0;
     for(let ch=0; ch<4; ch++) state.route[ch] = dv.getUint8(p++);
@@ -1197,7 +1302,7 @@ function renderMatrix(){
 }
 
 /* ============================================================
-   2. CROSSOVER / CHANNEL STRIP (WITH LR4 4-WAY GRAPH)
+   2. CROSSOVER / CHANNEL STRIP (2-WAY JUJUR & PRESISI)
    ============================================================ */
 function calcLR4Db(f, hpf, lpf, gain) {
   let dbHp = 0;
@@ -1211,11 +1316,6 @@ function calcLR4Db(f, hpf, lpf, gain) {
   return gain + dbHp + dbLp;
 }
 
-const XOVER_COLORS = ['#ff3366', '#ffc94a', '#3ee89a', '#00e5ff'];
-
-/* ============================================================
-   GRAFIK CROSSOVER 2-WAY STEREO (JUJUR & PRESISI)
-   ============================================================ */
 function drawXoverGraph() {
   const cv = document.getElementById('xoverCanvas');
   if (!cv) return;
@@ -1271,11 +1371,11 @@ function drawXoverGraph() {
   });
 
   // 3. Ambil Frekuensi Crossover Asli DSP
-  const hpfFreq = state.xoverHpf[0]; // HPF Speaker Utama (Out 1 & 2)
-  const lpfFreq = state.xoverLpf[2]; // LPF Subwoofer (Out 3 & 4)
+  const hpfFreq = state.xoverHpf[0];
+  const lpfFreq = state.xoverLpf[2];
   const isHighActive = (activeCh === 0 || activeCh === 1);
 
-  // --- KURVA 1: SUBWOOFER (OUT 3 & 4) -> Warna Cyan/Mint ---
+  // KURVA 1: SUBWOOFER (OUT 3 & 4)
   ctx.beginPath();
   ctx.strokeStyle = !isHighActive ? '#00e5ff' : '#007c8a';
   ctx.lineWidth = !isHighActive ? 2.5 : 1.5;
@@ -1283,7 +1383,6 @@ function drawXoverGraph() {
 
   for (let px = 0; px <= plotW; px += 2) {
     const f = Math.pow(10, lMin + (px / plotW) * (lMax - lMin));
-    // Rumus Linkwitz-Riley LPF 24dB/oct
     let db = (lpfFreq < 20000) ? -20 * Math.log10(1 + Math.pow(f / lpfFreq, 4)) : 0;
     db = Math.max(minDb, Math.min(maxDb, db));
     const py = dbToY(db);
@@ -1292,7 +1391,7 @@ function drawXoverGraph() {
   ctx.stroke();
   ctx.shadowBlur = 0;
 
-  // --- KURVA 2: MAIN HIGH (OUT 1 & 2) -> Warna Pink/Red ---
+  // KURVA 2: MAIN HIGH (OUT 1 & 2)
   ctx.beginPath();
   ctx.strokeStyle = isHighActive ? '#ff3366' : '#7a1c33';
   ctx.lineWidth = isHighActive ? 2.5 : 1.5;
@@ -1300,7 +1399,6 @@ function drawXoverGraph() {
 
   for (let px = 0; px <= plotW; px += 2) {
     const f = Math.pow(10, lMin + (px / plotW) * (lMax - lMin));
-    // Rumus Linkwitz-Riley HPF 24dB/oct
     let db = (hpfFreq > 20) ? -20 * Math.log10(1 + Math.pow(hpfFreq / f, 4)) : 0;
     db = Math.max(minDb, Math.min(maxDb, db));
     const py = dbToY(db);
@@ -1309,7 +1407,6 @@ function drawXoverGraph() {
   ctx.stroke();
   ctx.shadowBlur = 0;
 
-  // Penanda Titik Potong Keduanya
   ctx.fillStyle = '#ffc94a';
   ctx.font = 'bold 9px monospace';
   ctx.textAlign = 'center';
@@ -1326,9 +1423,7 @@ function renderXover(){
   const legendHtml = `
     <div class="legend" style="justify-content:center; gap:8px; margin-bottom:6px;">
       <span style="color:${activeCh===0?'#ff3366':'#708499'};"><i style="background:#ff3366"></i>OUT 1 HIGH</span>
-      
       <span style="color:${activeCh===2?'#00e5ff':'#708499'};"><i style="background:#00e5ff"></i>OUT 3 LOW</span>
-      
     </div>
   `;
 
@@ -1407,7 +1502,7 @@ function renderXover(){
 }
 
 /* ============================================================
-   3. EQUALIZER 9-BAND + RTA FULL-BAND OVERLAY (PRE & POST)
+   3. EQUALIZER 9-BAND + RTA MINI BARS DISKRET (PRE & POST)
    ============================================================ */
 function getChannelEqGainAtFreq(ch, freq) {
   let totalDb = 0;
@@ -1451,7 +1546,7 @@ function drawEqBars() {
   const cv = document.getElementById('eqCanvas'); if (!cv) return;
   const ctx = cv.getContext('2d');
   const W = cv.width, H = cv.height;
-  const padTop = 14, padBot = 22, padLeft = 10, padRight = 10;
+  const padTop = 14, padBot = 22, padLeft = 14, padRight = 14;
   const plotW = W - padLeft - padRight;
   const plotH = H - padTop - padBot;
   const midY = padTop + plotH / 2;
@@ -1482,60 +1577,58 @@ function drawEqBars() {
   });
 
   // ========================================================
-  // RTA FULL-BAND SPECTRUM OVERLAY (PRE & POST EQ)
+  // RTA DUAL-LAYER MINI BARS (BAR KECIL-KECIL DISKRET)
   // ========================================================
   if (rtaMode !== 'OFF') {
-    const rtaToY = (db) => {
-      const clamped = Math.max(-60, Math.min(0, db));
-      return (H - padBot) - ((clamped + 60) / 60) * plotH;
-    };
+    const baseY = H - padBot;
+    const maxBarH = plotH - 4;
 
-    // A. PRE-EQ (Sinyal Masuk - Grey Tint)
-    if (rtaMode === 'PRE' || rtaMode === 'BOTH') {
-      ctx.beginPath();
-      ctx.moveTo(padLeft, H - padBot);
-      for (let i = 0; i < NUM_BANDS; i++) {
-        const x = padLeft + ((Math.log10(FREQ_ISO[i]) - lMin) / (lMax - lMin)) * plotW;
-        ctx.lineTo(x, rtaToY(rtaPreDb[i]));
-      }
-      ctx.lineTo(W - padRight, H - padBot);
-      ctx.closePath();
-      ctx.fillStyle = 'rgba(148, 163, 184, 0.16)';
-      ctx.fill();
+    for (let i = 0; i < NUM_BANDS; i++) {
+      const centerX = padLeft + ((Math.log10(FREQ_ISO[i]) - lMin) / (lMax - lMin)) * plotW;
+      
+      const preClamped = Math.max(-60, Math.min(0, rtaPreDb[i]));
+      const preH = Math.max(1, ((preClamped + 60) / 60) * maxBarH);
 
-      ctx.beginPath();
-      ctx.strokeStyle = 'rgba(148, 163, 184, 0.45)';
-      ctx.lineWidth = 1;
-      for (let i = 0; i < NUM_BANDS; i++) {
-        const x = padLeft + ((Math.log10(FREQ_ISO[i]) - lMin) / (lMax - lMin)) * plotW;
-        const y = rtaToY(rtaPreDb[i]);
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    }
+      const postClamped = Math.max(-60, Math.min(6, rtaPostDb[i]));
+      const postH = Math.max(1, ((postClamped + 60) / 66) * maxBarH);
 
-    // B. POST-EQ (Sinyal Hasil Filter - Mint Glow)
-    if (rtaMode === 'POST' || rtaMode === 'BOTH') {
-      ctx.beginPath();
-      ctx.moveTo(padLeft, H - padBot);
-      for (let i = 0; i < NUM_BANDS; i++) {
-        const x = padLeft + ((Math.log10(FREQ_ISO[i]) - lMin) / (lMax - lMin)) * plotW;
-        ctx.lineTo(x, rtaToY(rtaPostDb[i]));
-      }
-      ctx.lineTo(W - padRight, H - padBot);
-      ctx.closePath();
-      ctx.fillStyle = 'rgba(62, 232, 154, 0.2)';
-      ctx.fill();
+      if (rtaMode === 'BOTH') {
+        const barW = 3.2; // Lebar bar kecil presisi
+        
+        // 1. Bar Kiri: PRE-EQ (Abu-abu / Slate Input)
+        ctx.fillStyle = 'rgba(112, 132, 153, 0.5)';
+        ctx.fillRect(centerX - barW - 0.5, baseY - preH, barW, preH);
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillRect(centerX - barW - 0.5, baseY - preH, barW, 1.5); // Peak cap
 
-      ctx.beginPath();
-      ctx.strokeStyle = '#3ee89a';
-      ctx.lineWidth = 1.4;
-      for (let i = 0; i < NUM_BANDS; i++) {
-        const x = padLeft + ((Math.log10(FREQ_ISO[i]) - lMin) / (lMax - lMin)) * plotW;
-        const y = rtaToY(rtaPostDb[i]);
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        // 2. Bar Kanan: POST-EQ (Hijau Mint Glowing Output)
+        const grad = ctx.createLinearGradient(0, baseY, 0, baseY - postH);
+        grad.addColorStop(0, 'rgba(0, 229, 255, 0.7)');
+        grad.addColorStop(0.7, 'rgba(62, 232, 154, 0.85)');
+        grad.addColorStop(1, '#ffc94a');
+        ctx.fillStyle = grad;
+        ctx.fillRect(centerX + 0.5, baseY - postH, barW, postH);
+        ctx.fillStyle = '#ffc94a';
+        ctx.fillRect(centerX + 0.5, baseY - postH, barW, 1.5); // Peak cap
+      } 
+      else if (rtaMode === 'PRE') {
+        const barW = 5;
+        ctx.fillStyle = 'rgba(148, 163, 184, 0.6)';
+        ctx.fillRect(centerX - barW / 2, baseY - preH, barW, preH);
+        ctx.fillStyle = '#cbd5e1';
+        ctx.fillRect(centerX - barW / 2, baseY - preH, barW, 2);
+      } 
+      else if (rtaMode === 'POST') {
+        const barW = 5;
+        const grad = ctx.createLinearGradient(0, baseY, 0, baseY - postH);
+        grad.addColorStop(0, '#00e5ff');
+        grad.addColorStop(0.8, '#3ee89a');
+        grad.addColorStop(1, '#ffc94a');
+        ctx.fillStyle = grad;
+        ctx.fillRect(centerX - barW / 2, baseY - postH, barW, postH);
+        ctx.fillStyle = '#ffc94a';
+        ctx.fillRect(centerX - barW / 2, baseY - postH, barW, 2);
       }
-      ctx.stroke();
     }
   }
 
@@ -1616,6 +1709,21 @@ function renderEq(){
   win.innerHTML = `
     <div class="panel">${chSelector(4)}</div>
     <div class="panel">
+      <!-- QUICK TEMPLATE PRESET SELECTOR -->
+      <div class="eq-tpl-wrap">
+        <select id="eqTplSelector">
+          <option value="" disabled selected>-- PILIH TEMPLATE EQUALIZER --</option>
+          <option value="flat">1. FLAT / LINEAR (RESET 0 dB)</option>
+          <option value="bass_boost">2. BASS BOOST / SUB LAPANGAN</option>
+          <option value="vocal_clarity">3. VOCAL CLARITY (BERSIH & LANTANG)</option>
+          <option value="v_shape">4. V-SHAPE / CLUB DISCO DJ</option>
+          <option value="subwoofer_punch">5. SUBWOOFER ONLY (PUNCH 45Hz)</option>
+          <option value="bright_tweeter">6. BRIGHT AIR / TWEETER CRISP</option>
+          <option value="anti_feedback">7. NOTCH / ANTI-FEEDBACK DENGUNG</option>
+        </select>
+        <button id="eqApplyTplBtn">TERAPKAN</button>
+      </div>
+
       <!-- TOOLBAR PRO EQ -->
       <div class="eq-toolbar">
         <button class="eq-tool-btn ${isBypassed?'bypass-active':''}" id="eqBypassBtn">
@@ -1640,15 +1748,15 @@ function renderEq(){
         </button>
       </div>
 
-      <!-- GRAFIK TOUCH & DRAG + RTA SPECTRUM -->
+      <!-- GRAFIK EQ + RTA MINI BARS -->
       <div class="graphwrap">
         <div class="legend" style="justify-content: flex-end; gap: 8px; margin-bottom: 3px;">
-          <span><i style="background:#708499"></i>PRE-EQ</span>
-          <span><i style="background:#3ee89a"></i>POST-EQ</span>
+          <span><i style="background:#708499"></i>PRE (IN)</span>
+          <span><i style="background:#3ee89a"></i>POST (OUT)</span>
           <span><i style="background:#00e5ff"></i>FILTER</span>
         </div>
         <canvas id="eqCanvas" width="600" height="230"></canvas>
-        <div class="graph-hint">💡 SENTUH &amp; GESER TITIK 1-9 LANGSUNG DI GRAFIK UNTUK ATUR FREK &amp; GAIN</div>
+        <div class="graph-hint">PILIH BAND 1-9 &amp; ATUR NILAI FREK/GAIN/Q MENGGUNAKAN SLIDER DI BAWAH</div>
       </div>
 
       ${bands}
@@ -1693,7 +1801,16 @@ function renderEq(){
 
   bindChSelector(win);
   drawEqBars();
-  attachCanvasTouchEvents();
+
+  // Template Apply Event
+  win.querySelector('#eqApplyTplBtn').addEventListener('click', () => {
+    const selVal = win.querySelector('#eqTplSelector').value;
+    if (!selVal) {
+      toast('Pilih salah satu template terlebih dahulu');
+      return;
+    }
+    applyEqTemplate(selVal);
+  });
 
   win.querySelectorAll('[data-band]').forEach(b=>{
     b.addEventListener('click', ()=>{ activeBand=+b.dataset.band; render(); });
@@ -1810,109 +1927,6 @@ function renderEq(){
     toast('Mode RTA: ' + rtaMode);
     drawEqBars();
   });
-}
-
-function attachCanvasTouchEvents() {
-  const cv = document.getElementById('eqCanvas');
-  if (!cv) return;
-
-  const padTop = 14, padBot = 22, padLeft = 10, padRight = 10;
-  const plotW = cv.width - padLeft - padRight;
-  const plotH = cv.height - padTop - padBot;
-  const midY = padTop + plotH / 2;
-  const lMin = Math.log10(20), lMax = Math.log10(20000);
-
-  function getCanvasCoords(e) {
-    const rect = cv.getBoundingClientRect();
-    const scaleX = cv.width / rect.width;
-    const scaleY = cv.height / rect.height;
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
-  }
-
-  function handleTouchStart(e) {
-    const { x, y } = getCanvasCoords(e);
-    let bestDist = Infinity, selectedB = -1;
-
-    for (let b = 0; b < 9; b++) {
-      const f = FREQ_ISO[state.peqFreqIdx[activeCh][b]];
-      const nx = padLeft + ((Math.log10(f) - lMin) / (lMax - lMin)) * plotW;
-      const g = state.peqGain[activeCh][b] / 10;
-      const ny = midY - (g / 12) * (plotH / 2);
-
-      const dist = Math.hypot(x - nx, y - ny);
-      if (dist < 34 && dist < bestDist) {
-        bestDist = dist;
-        selectedB = b;
-      }
-    }
-
-    if (selectedB !== -1) {
-      isDraggingNode = true;
-      draggedBandIdx = selectedB;
-      activeBand = selectedB;
-      render();
-      if (e.cancelable) e.preventDefault();
-    }
-  }
-
-  function handleTouchMove(e) {
-    if (!isDraggingNode || draggedBandIdx === null) return;
-    if (e.cancelable) e.preventDefault();
-
-    const { x, y } = getCanvasCoords(e);
-    let rawGain = ((midY - y) / (plotH / 2)) * 12;
-    rawGain = Math.max(-12, Math.min(12, Math.round(rawGain * 10) / 10));
-    state.peqGain[activeCh][draggedBandIdx] = Math.round(rawGain * 10);
-
-    const clampedX = Math.max(padLeft, Math.min(cv.width - padRight, x));
-    const t = (clampedX - padLeft) / plotW;
-    const targetFreq = Math.pow(10, lMin + t * (lMax - lMin));
-
-    let bestIdx = 0, bestDiff = Infinity;
-    FREQ_ISO.forEach((f, idx) => {
-      const diff = Math.abs(Math.log10(f) - Math.log10(targetFreq));
-      if (diff < bestDiff) { bestDiff = diff; bestIdx = idx; }
-    });
-    state.peqFreqIdx[activeCh][draggedBandIdx] = bestIdx;
-
-    const fs = document.getElementById('peqFreqSlider');
-    const pgs = document.getElementById('peqGainSlider');
-    const fVal = document.getElementById('peqFreqVal');
-    const gVal = document.getElementById('peqGainVal');
-
-    if (fs) fs.value = bestIdx;
-    if (pgs) pgs.value = rawGain;
-    if (fVal) fVal.textContent = FREQ_ISO[bestIdx] + ' Hz';
-    if (gVal) gVal.textContent = (rawGain > 0 ? '+' : '') + rawGain.toFixed(1) + ' dB';
-
-    sendLive('peq'+activeCh+'_'+draggedBandIdx, CMD.SET_PEQ, [
-      activeCh, draggedBandIdx, bestIdx,
-      ...i16le(state.peqGain[activeCh][draggedBandIdx]),
-      ...u16le(state.peqQ[activeCh][draggedBandIdx])
-    ]);
-    drawEqBars();
-  }
-
-  function handleTouchEnd() {
-    if (isDraggingNode && draggedBandIdx !== null) {
-      sendCmd(CMD.SET_PEQ, [
-        activeCh, draggedBandIdx, state.peqFreqIdx[activeCh][draggedBandIdx],
-        ...i16le(state.peqGain[activeCh][draggedBandIdx]),
-        ...u16le(state.peqQ[activeCh][draggedBandIdx])
-      ]);
-    }
-    isDraggingNode = false;
-    draggedBandIdx = null;
-  }
-
-  cv.addEventListener('touchstart', handleTouchStart, { passive: false });
-  cv.addEventListener('touchmove', handleTouchMove, { passive: false });
-  cv.addEventListener('touchend', handleTouchEnd);
-  cv.addEventListener('mousedown', handleTouchStart);
-  window.addEventListener('mousemove', handleTouchMove);
-  window.addEventListener('mouseup', handleTouchEnd);
 }
 
 /* 4. DELAY */
