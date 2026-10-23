@@ -1,0 +1,2328 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>ELKASARI DSP Manager — ESP32-S3 Online Mobile</title>
+  <meta name="description" content="Aplikasi Online Controller Web Bluetooth, USB Serial, dan WiFi WebSocket untuk Digital Sound Processor ELKASARI DSP 2-IN 4-OUT ESP32-S3." />
+  <meta name="theme-color" content="#0a0e17" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <!-- Favicon Vector Ringan -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300e5ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12h3l3-9 4 18 4-12 3 6h3'/%3E%3C/svg%3E" />
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            neonCyan: '#00e5ff',
+            neonGreen: '#3ee89a',
+            neonAmber: '#ffc94a',
+            neonRose: '#ff3366',
+            panelBg: '#11151f',
+            cardBg: '#0c121d',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18, React-DOM, & Babel Standalone CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    html, body, #root {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background-color: #0b0c10;
+      color: #f1f5f9;
+      overscroll-behavior: none;
+    }
+    .touch-scroll-container {
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+    input[type=range] {
+      touch-action: pan-x;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      height: 22px;
+      width: 22px;
+      border-radius: 9999px;
+      background: #00e5ff;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
+      -webkit-appearance: none;
+      margin-top: -8px;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      height: 6px;
+      background: #1c2738;
+      border-radius: 9999px;
+    }
+    /* Animasi Pendar Logo & Kilau Cahaya Berjalan */
+
+    @keyframes logoShineSweep {
+      0% { opacity: 0; transform: translateX(-160%) skewX(-25deg); }
+      20% { opacity: 0.85; }
+      40% { opacity: 0; transform: translateX(250%) skewX(-25deg); }
+      100% { opacity: 0; transform: translateX(250%) skewX(-25deg); }
+    }
+
+    .animate-logo-shine {
+      animation: logoShineSweep 4.5s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="font-sans antialiased overflow-hidden">
+  <div id="root" class="h-full flex flex-col justify-between"></div>
+
+  <!-- APLIKASI UTAMA (BABEL JSX RUNTIME) -->
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    // ==========================================
+    // 1. IKON VEKTOR INLINE
+    // ==========================================
+    const Icon = ({ path, className = "w-4 h-4", viewBox = "0 0 24 24", fill = "none", stroke = "currentColor" }) => (
+      <svg className={className} viewBox={viewBox} fill={fill} stroke={stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        {path}
+      </svg>
+    );
+
+    const Icons = {
+      Activity: (p) => <Icon {...p} path={<path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/>} />,
+      Shuffle: (p) => <Icon {...p} path={<><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></>} />,
+      Sliders: (p) => <Icon {...p} path={<><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></>} />,
+      Clock: (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>} />,
+      Shield: (p) => <Icon {...p} path={<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>} />,
+      Save: (p) => <Icon {...p} path={<><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></>} />,
+      Bluetooth: (p) => <Icon {...p} path={<path d="m7 7 10 10-5 5V2l5 5L7 17"/>} />,
+      Usb: (p) => <Icon {...p} path={<><circle cx="10" cy="7" r="1"/><circle cx="4" cy="20" r="1"/><path d="M4.7 19.3 19 5"/><path d="m21 3-3 1 2 2Z"/><path d="M9.26 7.68 5 12l2 5"/><path d="m10 14 5 2 3.5-3.5"/><path d="m18 12 1-1 1 1-1 1Z"/></>} />,
+      Wifi: (p) => <Icon {...p} path={<><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.86a10 10 0 0 1 14 0"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/></>} />,
+      PowerOff: (p) => <Icon {...p} path={<><path d="M18.36 6.64A9 9 0 0 1 20.77 15"/><path d="M6.16 6.16a9 9 0 1 0 12.68 12.68"/><path d="M12 2v4"/><path d="m2 2 20 20"/></>} />,
+      Volume2: (p) => <Icon {...p} path={<><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></>} />,
+      VolumeX: (p) => <Icon {...p} path={<><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/></>} />,
+      Check: (p) => <Icon {...p} path={<polyline points="20 6 9 17 4 12"/>} />,
+      Close: (p) => <Icon {...p} path={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>} />,
+      Plus: (p) => <Icon {...p} path={<><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>} />,
+      Minus: (p) => <Icon {...p} path={<line x1="5" y1="12" x2="19" y2="12"/>} />
+    };
+
+    // ==========================================
+    // 2. PROTOKOL & KONFIGURASI DSP HARDWARE
+    // ==========================================
+    const BLE_CONFIG = {
+      SERVICE_UUID: '4fafc201-1fb5-459e-8fcc-c5c9c331914b',
+      CONTROL_UUID: 'beb5483e-36e1-4688-b7f5-ea07361b26a8',
+      STATUS_UUID:  'beb5483e-36e1-4688-b7f5-ea07361b26a9',
+      RTA_UUID:     'beb5483e-36e1-4688-b7f5-ea07361b26aa',
+    };
+
+    const CMD = {
+      SET_ROUTE: 1,
+      SET_GAIN: 2,
+      SET_MUTE: 3,
+      SET_XOVER_HPF: 4,
+      SET_XOVER_LPF: 5,
+      SET_PEQ: 6,
+      SET_DELAY: 7,
+      SET_LIMITER: 8,
+      LOAD_PRESET: 9,
+      SAVE_PRESET: 10,
+      GET_ALL_STATUS: 11
+    };
+
+    const ISO_FREQS = [
+      20, 22, 25, 28, 32, 40, 50, 63, 80, 100,
+      125, 160, 200, 250, 315, 400, 500, 630, 800, 1000,
+      1250, 1600, 2000, 2500, 3150, 4000, 5000, 6300, 8000, 10000,
+      12500, 16000, 20000
+    ];
+
+    const CHANNELS = ['OUT 1', 'OUT 2', 'OUT 3', 'OUT 4'];
+    const INPUTS = ['IN 1', 'IN 2'];
+
+    // 5 Bank Preset Utama
+    const PRESETS_DEFAULT = [
+      { name: "DEFAULT 2-WAY STEREO", desc: "OUT 1&2 HIGH 120Hz | OUT 3&4 SUB 40-120Hz" },
+      { name: "SUB LAPANGAN GLERR", desc: "SUBWOOFER 35-90Hz + DELAY + BASS BOOST" },
+      { name: "LINE ARRAY 3-WAY", desc: "SUB 40-100Hz | MID 100-1.8k | HI >1.8k" },
+      { name: "VOCAL MONITOR PANGGUNG", desc: "MID-HIGH JERNIH + ANTI-FEEDBACK NOTCH" },
+      { name: "CUSTOM PROFILE 05", desc: "User Defined Memory Bank 05" }
+    ];
+
+    function packInt16(val) {
+      const buf = new ArrayBuffer(2);
+      new DataView(buf).setInt16(0, Math.round(val), true);
+      return Array.from(new Uint8Array(buf));
+    }
+    function packUint16(val) {
+      const buf = new ArrayBuffer(2);
+      new DataView(buf).setUint16(0, Math.round(val), true);
+      return Array.from(new Uint8Array(buf));
+    }
+
+    // Perhitungan Akurat Peaking Biquad Filter Parametric EQ
+    function calcBiquadPeqGain(f0, gainDb, q, f, fs = 48000) {
+      if (Math.abs(gainDb) < 0.05) return 0;
+      const A = Math.pow(10, gainDb / 40);
+      const w0 = (2 * Math.PI * f0) / fs;
+      const alpha = Math.sin(w0) / (2 * Math.max(0.01, q));
+      const cosw0 = Math.cos(w0);
+      const b0 = 1 + alpha * A;
+      const b1 = -2 * cosw0;
+      const b2 = 1 - alpha * A;
+      const a0 = 1 + alpha / A;
+      const a1 = -2 * cosw0;
+      const a2 = 1 - alpha / A;
+      const w = (2 * Math.PI * f) / fs;
+      const cosw = Math.cos(w);
+      const sinw = Math.sin(w);
+      const cos2w = Math.cos(2 * w);
+      const sin2w = Math.sin(2 * w);
+      const reNum = b0 / a0 + (b1 / a0) * cosw + (b2 / a0) * cos2w;
+      const imNum = -(b1 / a0) * sinw - (b2 / a0) * sin2w;
+      const reDen = 1 + (a1 / a0) * cosw + (a2 / a0) * cos2w;
+      const imDen = -(a1 / a0) * sinw - (a2 / a0) * sin2w;
+      const magSq = (reNum * reNum + imNum * imNum) / (reDen * reDen + imDen * imDen + 1e-20);
+      return 10 * Math.log10(Math.max(magSq, 1e-20));
+    }
+
+    // ==========================================
+    // 3. HARDWARE COMMUNICATION DRIVER
+    // ==========================================
+    class Esp32DspDriver {
+      constructor() {
+        this.device = null;
+        this.controlChar = null;
+        this.statusChar = null;
+        this.rtaChar = null;
+        this.serialPort = null;
+        this.ws = null;
+        this.connected = false;
+        this.authenticated = false;
+        this.mode = 'disconnected';
+        this.deviceName = 'ELKASARI DSP S3';
+        this.listeners = new Set();
+        this.latestRtaData = null; // RTA hardware riil
+        this.queue = [];
+        this.isSending = false;
+      }
+
+      subscribe(fn) {
+        this.listeners.add(fn);
+        return () => this.listeners.delete(fn);
+      }
+
+      notify(event, payload) {
+        this.listeners.forEach(fn => fn(event, payload));
+      }
+
+      async connectBle(pin) {
+        if (!navigator.bluetooth) throw new Error("Gunakan browser Chrome di Android/PC dengan HTTPS.");
+        this.device = await navigator.bluetooth.requestDevice({
+          filters: [
+            { services: [BLE_CONFIG.SERVICE_UUID] },
+            { namePrefix: 'EDSP' },
+            { namePrefix: 'ELKASARI' },
+            { namePrefix: 'ESP32' }
+          ],
+          optionalServices: [BLE_CONFIG.SERVICE_UUID]
+        });
+
+        this.device.addEventListener('gattserverdisconnected', () => this.handleDisconnect());
+        const server = await this.device.gatt.connect();
+        const service = await server.getPrimaryService(BLE_CONFIG.SERVICE_UUID);
+
+        this.controlChar = await service.getCharacteristic(BLE_CONFIG.CONTROL_UUID);
+
+        try {
+          this.statusChar = await service.getCharacteristic(BLE_CONFIG.STATUS_UUID);
+          await this.statusChar.startNotifications();
+          this.statusChar.addEventListener('characteristicvaluechanged', (e) => this.parseStatusPacket(e.target.value));
+        } catch(err) {
+          console.warn("Status Characteristic notify gagal", err);
+        }
+
+        try {
+          this.rtaChar = await service.getCharacteristic(BLE_CONFIG.RTA_UUID);
+          await this.rtaChar.startNotifications();
+          this.rtaChar.addEventListener('characteristicvaluechanged', (e) => this.parseRtaPacket(e.target.value));
+        } catch(err) {
+          console.warn("RTA Notify tidak aktif di firmware", err);
+        }
+
+        this.mode = 'ble';
+        this.connected = true;
+        this.deviceName = this.device.name || 'ELKASARI DSP (BLE)';
+
+        if (pin) await this.sendAuthPin(pin);
+        else this.authenticated = true;
+
+        this.notify('connection', { connected: true, mode: 'ble', name: this.deviceName, authed: this.authenticated });
+        this.sendCommand(CMD.GET_ALL_STATUS, []);
+        return true;
+      }
+
+      async connectSerial() {
+        if (!navigator.serial) throw new Error("Web Serial API membutuhkan Google Chrome.");
+        this.serialPort = await navigator.serial.requestPort();
+        await this.serialPort.open({ baudRate: 115200 });
+        this.mode = 'serial';
+        this.connected = true;
+        this.authenticated = true;
+        this.deviceName = 'ELKASARI DSP (USB Serial)';
+        this.readSerialLoop();
+        this.notify('connection', { connected: true, mode: 'serial', name: this.deviceName, authed: true });
+        this.sendCommand(CMD.GET_ALL_STATUS, []);
+        return true;
+      }
+
+      async readSerialLoop() {
+        if (!this.serialPort?.readable) return;
+        const reader = this.serialPort.readable.getReader();
+        try {
+          while (this.connected) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            if (value) {
+              const dv = new DataView(value.buffer, value.byteOffset, value.byteLength);
+              if (dv.byteLength === 33) this.parseRtaPacket(dv);
+              else this.parseStatusPacket(dv);
+            }
+          }
+        } catch (e) {
+          console.warn("Serial error", e);
+        } finally {
+          reader.releaseLock();
+        }
+      }
+
+      async connectWifi(ip = '192.168.4.1') {
+        return new Promise((resolve, reject) => {
+          try {
+            if (this.ws) this.ws.close();
+            this.ws = new WebSocket(`ws://${ip}:81`);
+            this.ws.binaryType = 'arraybuffer';
+            this.ws.onopen = () => {
+              this.mode = 'wifi';
+              this.connected = true;
+              this.authenticated = true;
+              this.deviceName = `ELKASARI DSP (WiFi @ ${ip})`;
+              this.notify('connection', { connected: true, mode: 'wifi', name: this.deviceName, authed: true });
+              this.sendCommand(CMD.GET_ALL_STATUS, []);
+              resolve(true);
+            };
+            this.ws.onmessage = (e) => {
+              if (e.data instanceof ArrayBuffer) {
+                const dv = new DataView(e.data);
+                if (dv.byteLength === 33) this.parseRtaPacket(dv);
+                else this.parseStatusPacket(dv);
+              }
+            };
+            this.ws.onerror = () => reject(new Error("Koneksi WiFi WebSocket gagal"));
+            this.ws.onclose = () => this.handleDisconnect();
+          } catch(err) {
+            reject(err);
+          }
+        });
+      }
+
+      handleDisconnect() {
+        this.connected = false;
+        this.authenticated = false;
+        this.latestRtaData = null;
+        this.notify('connection', { connected: false, mode: 'disconnected', name: this.deviceName, authed: false });
+        this.notify('rta', null);
+      }
+
+      async disconnect() {
+        if (this.device?.gatt?.connected) this.device.gatt.disconnect();
+        if (this.serialPort) try { await this.serialPort.close(); } catch{}
+        if (this.ws) try { this.ws.close(); } catch{}
+        this.handleDisconnect();
+      }
+
+      async sendAuthPin(pinStr) {
+        const pinBytes = Array.from(pinStr).map(c => c.charCodeAt(0));
+        await this.writeRaw([0x20, ...pinBytes]);
+        this.authenticated = true;
+        this.notify('connection', { connected: this.connected, mode: this.mode, name: this.deviceName, authed: true });
+      }
+
+      parseRtaPacket(dv) {
+        if (dv.byteLength < 33) return;
+        const bands = new Float32Array(33);
+        for (let i = 0; i < 33; i++) {
+          bands[i] = dv.getUint8(i) / 255.0; // 0..255 diubah ke rasio 0..1
+        }
+        this.latestRtaData = bands;
+        this.notify('rta', bands);
+      }
+
+      parseStatusPacket(dv) {
+        if (dv.byteLength >= 28) {
+          const meters = [
+            dv.getUint8(22), dv.getUint8(23),
+            dv.getUint8(24), dv.getUint8(25), dv.getUint8(26), dv.getUint8(27)
+          ];
+          this.notify('meters', meters);
+        }
+      }
+
+      sendCommand(cmdId, payload) {
+        if (!this.connected) return;
+        const packet = [cmdId, ...payload];
+        this.queue.push(packet);
+        this.processQueue();
+      }
+
+      async processQueue() {
+        if (this.isSending || this.queue.length === 0) return;
+        this.isSending = true;
+        const packet = this.queue.shift();
+        try {
+          await this.writeRaw(packet);
+        } catch(e) {
+          console.error("Gagal kirim paket ke DSP", e);
+        } finally {
+          this.isSending = false;
+          if (this.queue.length > 0) {
+            setTimeout(() => this.processQueue(), 15);
+          }
+        }
+      }
+
+      async writeRaw(bytes) {
+        const arr = new Uint8Array(bytes);
+        if (this.mode === 'ble' && this.controlChar) {
+          if (this.controlChar.writeValueWithoutResponse) {
+            await this.controlChar.writeValueWithoutResponse(arr);
+          } else {
+            await this.controlChar.writeValue(arr);
+          }
+        } else if (this.mode === 'serial' && this.serialPort?.writable) {
+          const writer = this.serialPort.writable.getWriter();
+          await writer.write(arr);
+          writer.releaseLock();
+        } else if (this.mode === 'wifi' && this.ws?.readyState === WebSocket.OPEN) {
+          this.ws.send(arr.buffer);
+        }
+      }
+    }
+
+    const dspDriver = new Esp32DspDriver();
+
+    // ==========================================
+    // 4. KOMPONEN UTAMA DENGAN SLIDE ANIMATION
+    // ==========================================
+    function App() {
+      const tabs = [
+        { id: 'matrix', label: 'Matrix', icon: Icons.Shuffle },
+        { id: 'xover',  label: 'X-Over', icon: Icons.Activity },
+        { id: 'eq',     label: 'EQ + RTA', icon: Icons.Sliders },
+        { id: 'delay',  label: 'Delay', icon: Icons.Clock },
+        { id: 'comp',   label: 'Limiter', icon: Icons.Shield },
+        { id: 'preset', label: 'Preset', icon: Icons.Save }
+      ];
+
+      const [activeTab, setActiveTab] = useState('matrix');
+      const [selectedCh, setSelectedCh] = useState(0);
+
+      // State Swipe Real-Time Slide
+      const [dragOffset, setDragOffset] = useState(0);
+      const [isDragging, setIsDragging] = useState(false);
+
+      const [connState, setConnState] = useState({
+        connected: false,
+        mode: 'disconnected',
+        name: 'ELKASARI DSP S3',
+        authed: false
+      });
+
+      // DSP State Parameter
+      const [dsp, setDsp] = useState({
+        route: [0, 1, 0, 1], // In1, In2, Sum
+        gain: [0, 0, 0, 0],
+        mute: [false, false, false, false, false, false],
+        phase: [false, false, false, false],
+        hpf: [120, 120, 35, 35],
+        lpf: [20000, 20000, 120, 120],
+        delay: [0, 0, 2.1, 2.1],
+        limThresh: [-6, -6, -3, -3],
+        limRatio: [1, 1, 4, 4], // > 1.2 berarti Limiter aktif
+        peqFreqIdx: [
+          [6, 9, 13, 16, 19, 22, 25, 28, 31],
+          [6, 9, 13, 16, 19, 22, 25, 28, 31],
+          [4, 6, 8, 10, 12, 14, 16, 18, 20],
+          [4, 6, 8, 10, 12, 14, 16, 18, 20]
+        ],
+        peqGain: [
+          [0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [20, 40, 30, 0, -20, -50, -80, -100, -120],
+          [20, 40, 30, 0, -20, -50, -80, -100, -120]
+        ],
+        peqQ: [
+          [10, 10, 10, 10, 10, 10, 10, 10, 10],
+          [10, 10, 10, 10, 10, 10, 10, 10, 10],
+          [14, 12, 10, 10, 12, 15, 20, 20, 20],
+          [14, 12, 10, 10, 12, 15, 20, 20, 20]
+        ]
+      });
+
+      const [meters, setMeters] = useState([0, 0, 0, 0, 0, 0]);
+      const [rtaHardwareData, setRtaHardwareData] = useState(null);
+      const [toastMsg, setToastMsg] = useState(null);
+      const [showConnModal, setShowConnModal] = useState(false);
+      const [activePresetSlot, setActivePresetSlot] = useState(0);
+
+      const showToast = (msg) => {
+        setToastMsg(msg);
+        setTimeout(() => setToastMsg(null), 2500);
+      };
+
+      useEffect(() => {
+        const unsub = dspDriver.subscribe((evt, payload) => {
+          if (evt === 'connection') setConnState(payload);
+          else if (evt === 'meters') setMeters(payload);
+          else if (evt === 'rta') setRtaHardwareData(payload);
+        });
+        return () => unsub();
+      }, []);
+
+      // SWIPE HORIZONTAL DENGAN PREVIEW GESER REAL-TIME
+      const touchStartX = useRef(0);
+      const touchStartY = useRef(0);
+      const isSwipeValid = useRef(false);
+
+      const handleTouchStart = (e) => {
+        const t = e.target;
+        if (t.tagName === 'INPUT' || t.tagName === 'CANVAS' || t.closest('button') || t.closest('input')) {
+          isSwipeValid.current = false;
+          return;
+        }
+        isSwipeValid.current = true;
+        touchStartX.current = e.touches[0].clientX;
+        touchStartY.current = e.touches[0].clientY;
+        setIsDragging(true);
+      };
+
+      const handleTouchMove = (e) => {
+        if (!isSwipeValid.current) return;
+        const currentX = e.touches[0].clientX;
+        const currentY = e.touches[0].clientY;
+        const diffX = currentX - touchStartX.current;
+        const diffY = currentY - touchStartY.current;
+
+        // Kunci gesture jika dominan horizontal
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+          setDragOffset(diffX);
+        }
+      };
+
+      const handleTouchEnd = () => {
+        if (!isSwipeValid.current) {
+          setIsDragging(false);
+          setDragOffset(0);
+          return;
+        }
+        const currentIndex = tabs.findIndex(t => t.id === activeTab);
+        if (dragOffset < -50 && currentIndex < tabs.length - 1) {
+          setActiveTab(tabs[currentIndex + 1].id);
+        } else if (dragOffset > 50 && currentIndex > 0) {
+          setActiveTab(tabs[currentIndex - 1].id);
+        }
+        setIsDragging(false);
+        setDragOffset(0);
+      };
+
+      const toggleMute = (idx) => {
+        const next = [...dsp.mute];
+        next[idx] = !next[idx];
+        setDsp(p => ({ ...p, mute: next }));
+        let mask = 0;
+        next.forEach((m, i) => { if (m) mask |= (1 << i); });
+        dspDriver.sendCommand(CMD.SET_MUTE, [mask]);
+      };
+
+      const setOutputGain = (ch, val) => {
+        const next = [...dsp.gain];
+        next[ch] = val;
+        setDsp(p => ({ ...p, gain: next }));
+        dspDriver.sendCommand(CMD.SET_GAIN, [ch, ...packInt16(val)]);
+      };
+
+      const activeTabIndex = tabs.findIndex(t => t.id === activeTab);
+
+      return (
+        <div className="flex flex-col h-full w-full max-w-lg mx-auto bg-[#0b0c10] shadow-2xl overflow-hidden select-none">
+          
+          {/* HEADER: LOGO .PNG DENGAN ANIMASI KILAU BERJALAN & KONEKSI */}
+          <header className="px-3 py-2 bg-gradient-to-b from-[#141923] to-[#0c121d] border-b border-[#1e293b] flex items-center justify-between shrink-0">
+{/* Logo Container — Bersih Tanpa Background Cyan, Hanya Efek Kilau Geser */}
+            <div className="relative inline-flex items-center overflow-hidden py-1">
+              <div className="relative overflow-hidden">
+                <img 
+                  src="elkasariDSP.png" 
+                  alt="ELKASARI DSP" 
+                  className="h-9 sm:h-10 max-w-[170px] sm:max-w-[200px] object-contain block"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling.style.display = 'block';
+                  }}
+                />
+                {/* Fallback Teks jika file PNG belum ada */}
+                <div className="hidden font-black text-sm tracking-wider text-slate-100 py-1">
+                  ELKASARI DSP S3
+                </div>
+
+                {/* Lapisan Kilau Geser (Cahaya Putih Bening) */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                  <div className="w-1/2 h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 animate-logo-shine"></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Status & Connect Button Saja */}
+            <div className="flex items-center">
+              <button 
+                onClick={() => setShowConnModal(true)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10.5px] font-bold border transition ${
+                  connState.connected 
+                    ? 'border-neonCyan text-neonCyan bg-[#141b27] shadow-[0_0_10px_rgba(0,229,255,0.3)]' 
+                    : 'border-rose-500/50 text-rose-400 bg-rose-500/10'
+                }`}
+              >
+                {connState.connected ? <Icons.Bluetooth className="w-3.5 h-3.5 animate-pulse" /> : <Icons.PowerOff className="w-3.5 h-3.5" />}
+                <span>{connState.connected ? connState.mode.toUpperCase() : 'CONNECT'}</span>
+              </button>
+            </div>
+          </header>
+
+          {/* METER BRIDGE ATAS: DENGAN BADGE [LIM] JIKA LIMITER AKTIF */}
+          <div className="px-2 py-1.5 bg-[#080b11] border-b border-[#1c2738] shrink-0">
+            <div className="grid grid-cols-6 gap-1 text-center">
+              {['IN 1', 'IN 2', 'OUT 1', 'OUT 2', 'OUT 3', 'OUT 4'].map((name, idx) => {
+                const val = meters[idx] || 0;
+                const isMuted = dsp.mute[idx];
+                const pct = isMuted ? 0 : Math.min(100, Math.round((val / 255) * 100));
+                // Indikator Limiter untuk Output 1..4 (idx 2..5)
+                const isLimiterOn = idx >= 2 && dsp.limRatio[idx - 2] > 1.2;
+
+                return (
+                  <div key={name} className="flex flex-col items-center bg-[#0c121d] p-1 rounded border border-[#162130]">
+                    <div className="flex items-center justify-center gap-0.5 w-full">
+                      <span className={`text-[7.5px] font-mono font-bold ${idx < 2 ? 'text-neonGreen' : 'text-neonCyan'}`}>
+                        {name}
+                      </span>
+                      {isLimiterOn && (
+                        <span className="text-[6.5px] font-black px-1 rounded bg-neonAmber/20 border border-neonAmber text-neonAmber shadow-[0_0_4px_#ffc94a]">
+                          LIM
+                        </span>
+                      )}
+                    </div>
+                    <div className="w-full h-1.5 bg-[#04070c] rounded-full overflow-hidden mt-0.5">
+                      <div 
+                        className={`h-full transition-all duration-75 ${
+                          pct > 85 ? 'bg-rose-500' : pct > 65 ? 'bg-neonAmber' : 'bg-neonGreen'
+                        }`} 
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* CAROUSEL SLIDER VIEWPORT (SWIPE WITH SMOOTH SLIDE ANIMATION) */}
+          <div 
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            className="flex-1 overflow-hidden relative"
+          >
+            <div 
+              className="flex h-full w-[600%] transition-transform"
+              style={{
+                transform: `translateX(calc(-${activeTabIndex * (100 / 6)}% + ${dragOffset / 6}px))`,
+                transition: isDragging ? 'none' : 'transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1)'
+              }}
+            >
+              {/* TAB 1: MATRIX */}
+              <div className="w-[16.6666%] h-full overflow-y-auto px-3 py-3 touch-scroll-container pb-24">
+                <MatrixView 
+                  dsp={dsp} 
+                  setDsp={setDsp} 
+                  toggleMute={toggleMute} 
+                  setOutputGain={setOutputGain}
+                />
+              </div>
+
+              {/* TAB 2: CROSSOVER LR-24dB */}
+              <div className="w-[16.6666%] h-full overflow-y-auto px-3 py-3 touch-scroll-container pb-24">
+                <XoverView 
+                  dsp={dsp} 
+                  setDsp={setDsp} 
+                  selectedCh={selectedCh} 
+                  setSelectedCh={setSelectedCh}
+                />
+              </div>
+
+              {/* TAB 3: 9-BAND PEQ + RTA AKTUAL */}
+              <div className="w-[16.6666%] h-full overflow-y-auto px-3 py-3 touch-scroll-container pb-24">
+                <EqRtaView 
+                  dsp={dsp} 
+                  setDsp={setDsp} 
+                  selectedCh={selectedCh} 
+                  setSelectedCh={setSelectedCh}
+                  rtaHardwareData={rtaHardwareData}
+                  connected={connState.connected}
+                  showToast={showToast}
+                />
+              </div>
+
+              {/* TAB 4: TIME ALIGNMENT DELAY */}
+              <div className="w-[16.6666%] h-full overflow-y-auto px-3 py-3 touch-scroll-container pb-24">
+                <DelayView 
+                  dsp={dsp} 
+                  setDsp={setDsp} 
+                  selectedCh={selectedCh} 
+                  setSelectedCh={setSelectedCh} 
+                />
+              </div>
+
+              {/* TAB 5: LIMITER / COMPRESSOR */}
+              <div className="w-[16.6666%] h-full overflow-y-auto px-3 py-3 touch-scroll-container pb-24">
+                <CompView 
+                  dsp={dsp} 
+                  setDsp={setDsp} 
+                  selectedCh={selectedCh} 
+                  setSelectedCh={setSelectedCh}
+                  meters={meters}
+                />
+              </div>
+
+              {/* TAB 6: 5 BANK PRESETS */}
+              <div className="w-[16.6666%] h-full overflow-y-auto px-3 py-3 touch-scroll-container pb-24">
+                <PresetView 
+                  dsp={dsp}
+                  setDsp={setDsp}
+                  activeSlot={activePresetSlot}
+                  setActiveSlot={setActivePresetSlot}
+                  showToast={showToast} 
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* TOAST POPUP */}
+          {toastMsg && (
+            <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-[#11151f]/95 border border-neonCyan text-neonCyan font-mono text-xs px-4 py-2 rounded-full shadow-lg">
+              {toastMsg}
+            </div>
+          )}
+
+          {/* BOTTOM BAR TAB NAVIGATION */}
+          <nav className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-[#11151f]/95 backdrop-blur-md border-t border-[#1e293b] grid grid-cols-6 py-2 px-1 z-40">
+            {tabs.map((tab) => {
+              const IconComp = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex flex-col items-center justify-center py-1 rounded-md transition ${
+                    isActive ? 'text-neonCyan font-bold' : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <IconComp className="w-5 h-5 mb-0.5" />
+                  <span className="text-[9px] tracking-tight">{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* MODAL KONEKSI HARDWARE */}
+          {showConnModal && (
+            <ConnectionModal 
+              isOpen={showConnModal}
+              onClose={() => setShowConnModal(false)}
+              connState={connState}
+              dspDriver={dspDriver}
+              showToast={showToast}
+            />
+          )}
+        </div>
+      );
+    }
+// ==========================================
+    // VIEW: MATRIX & DIAGRAM ALUR (LEFT/RIGHT & DAC1/DAC2)
+    // ==========================================
+    function MatrixView({ dsp, setDsp, toggleMute, setOutputGain }) {
+      const setRoute = (ch, routeVal) => {
+        const next = [...dsp.route];
+        next[ch] = routeVal;
+        setDsp(p => ({ ...p, route: next }));
+        dspDriver.sendCommand(CMD.SET_ROUTE, [ch, routeVal]);
+      };
+
+      const togglePhase = (ch) => {
+        const next = [...dsp.phase];
+        next[ch] = !next[ch];
+        setDsp(p => ({ ...p, phase: next }));
+      };
+
+      // Konfigurasi Input: IN 1 (LEFT) & IN 2 (RIGHT)
+      const inputConfigs = [
+        { name: 'IN 1', sub: 'LEFT', y: 50, color: '#00e5ff' },
+        { name: 'IN 2', sub: 'RIGHT', y: 120, color: '#3ee89a' }
+      ];
+
+      // Konfigurasi Output: MID-HIGH (OUT 1 & 2) vs LOW-SUB (OUT 3 & 4)
+      const outputConfigs = [
+        { name: 'OUT 1', dac: 'MID-HIGH', y: 26, color: '#00e5ff' },
+        { name: 'OUT 2', dac: 'MID-HIGH', y: 64, color: '#00e5ff' },
+        { name: 'OUT 3', dac: 'LOW-SUB', y: 106, color: '#ffc94a' },
+        { name: 'OUT 4', dac: 'LOW-SUB', y: 144, color: '#ffc94a' }
+      ];
+
+      return (
+        <div className="space-y-3">
+          {/* DIAGRAM KURVA BEZIER SINYAL AUDIO AKTUAL */}
+          <div className="bg-panelBg border border-[#1e293b] rounded-xl p-3">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-[10px] font-black text-neonCyan tracking-wider">
+                SKEMA JALUR SINYAL (SIGNAL FLOW)
+              </span>
+              <span className="text-[9px] font-mono text-slate-400">
+                2-IN × 4-OUT BUS
+              </span>
+            </div>
+            
+            <div className="bg-[#05070c] border border-[#182333] rounded-lg p-2 overflow-hidden">
+              <svg viewBox="0 0 390 175" className="w-full h-auto block select-none">
+                {/* Garis Grid Jalur Bus */}
+                <line x1="85" y1="10" x2="85" y2="165" stroke="#162233" strokeDasharray="2 2" />
+                <line x1="295" y1="10" x2="295" y2="165" stroke="#162233" strokeDasharray="2 2" />
+
+                {/* Garis Pemisah Visual MID-HIGH dan LOW-SUB */}
+                <line x1="290" y1="85" x2="385" y2="85" stroke="rgba(255, 201, 74, 0.25)" strokeDasharray="3 3" strokeWidth="1" />
+
+                {/* Garis Kurva Koneksi Riil */}
+                {outputConfigs.map((out, ch) => {
+                  const r = dsp.route[ch];
+                  const yTarget = out.y;
+                  const isMuted = dsp.mute[ch + 2];
+
+                  return (
+                    <g key={ch}>
+                      {/* Jalur dari IN 1 (LEFT) -> r === 0 atau r === 2 */}
+                      {(r === 0 || r === 2) && (
+                        <path 
+                          d={`M 68 ${inputConfigs[0].y} C 175 ${inputConfigs[0].y}, 210 ${yTarget}, 305 ${yTarget}`}
+                          fill="none"
+                          stroke={isMuted ? '#ff3366' : r === 2 ? '#ffc94a' : '#00e5ff'}
+                          strokeWidth="2"
+                          strokeDasharray={isMuted ? '4 3' : 'none'}
+                          opacity={isMuted ? 0.35 : 0.85}
+                        />
+                      )}
+                      {/* Jalur dari IN 2 (RIGHT) -> r === 1 atau r === 2 */}
+                      {(r === 1 || r === 2) && (
+                        <path 
+                          d={`M 68 ${inputConfigs[1].y} C 175 ${inputConfigs[1].y}, 210 ${yTarget}, 305 ${yTarget}`}
+                          fill="none"
+                          stroke={isMuted ? '#ff3366' : r === 2 ? '#ffc94a' : '#3ee89a'}
+                          strokeWidth="2"
+                          strokeDasharray={isMuted ? '4 3' : 'none'}
+                          opacity={isMuted ? 0.35 : 0.85}
+                        />
+                      )}
+                    </g>
+                  );
+                })}
+
+                {/* Node Input: IN 1 (LEFT) & IN 2 (RIGHT) */}
+                {inputConfigs.map((inCfg) => (
+                  <g key={inCfg.name}>
+                    <rect 
+                      x="8" 
+                      y={inCfg.y - 15} 
+                      width="60" 
+                      height="30" 
+                      rx="5" 
+                      fill="#111827" 
+                      stroke={inCfg.color} 
+                      strokeWidth="1.5" 
+                    />
+                    <text x="38" y={inCfg.y - 1} textAnchor="middle" fill="#f1f5f9" fontSize="9.5" fontFamily="monospace" fontWeight="bold">
+                      {inCfg.name}
+                    </text>
+                    <text x="38" y={inCfg.y + 10} textAnchor="middle" fill={inCfg.color} fontSize="7" fontFamily="monospace" fontWeight="bold">
+                      {inCfg.sub}
+                    </text>
+                    <circle cx="68" cy={inCfg.y} r="4" fill={inCfg.color} />
+                  </g>
+                ))}
+
+                {/* Node Output: OUT 1-2 (MID-HIGH) & OUT 3-4 (LOW-SUB) */}
+                {outputConfigs.map((outCfg, idx) => {
+                  const isMuted = dsp.mute[idx + 2];
+                  const borderColor = isMuted ? '#ff3366' : outCfg.color;
+
+                  return (
+                    <g key={outCfg.name}>
+                      <circle cx="305" cy={outCfg.y} r="4" fill={borderColor} />
+                      <rect 
+                        x="305" 
+                        y={outCfg.y - 15} 
+                        width="68" 
+                        height="30" 
+                        rx="5" 
+                        fill="#111827" 
+                        stroke={borderColor} 
+                        strokeWidth="1.5" 
+                      />
+                      <text x="339" y={outCfg.y - 1} textAnchor="middle" fill={isMuted ? '#ff3366' : '#f1f5f9'} fontSize="9" fontFamily="monospace" fontWeight="bold">
+                        {outCfg.name}
+                      </text>
+                      <text x="339" y={outCfg.y + 10} textAnchor="middle" fill={borderColor} fontSize="7" fontFamily="monospace" fontWeight="bold">
+                        {outCfg.dac}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+          </div>
+
+          {/* KARTU OUTPUT CHANNEL 1-4 (DENGAN LABEL DAC & BADGE LIMITER) */}
+          <div className="grid grid-cols-2 gap-2">
+            {outputConfigs.map((cfg, ch) => {
+              const currentRoute = dsp.route[ch];
+              const isLimiterOn = dsp.limRatio[ch] > 1.2;
+              const isDac2 = ch >= 2;
+
+              return (
+                <div 
+                  key={cfg.name} 
+                  className={`p-3 bg-panelBg rounded-xl flex flex-col justify-between border ${
+                    isDac2 ? 'border-neonAmber/40' : 'border-neonCyan/40'
+                  }`}
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`font-black text-xs ${isDac2 ? 'text-neonAmber' : 'text-neonCyan'}`}>
+                        {cfg.name}
+                      </span>
+                      <span className={`text-[7px] font-black px-1 rounded ${
+                        isDac2 
+                          ? 'bg-neonAmber/10 text-neonAmber border border-neonAmber/40' 
+                          : 'bg-neonCyan/10 text-neonCyan border border-neonCyan/40'
+                      }`}>
+                        {cfg.dac}
+                      </span>
+                      {isLimiterOn && (
+                        <span className="text-[7px] font-black px-1.5 py-0.5 rounded bg-neonRose/20 border border-neonRose text-neonRose shadow-[0_0_6px_#ff3366]">
+                          LIM
+                        </span>
+                      )}
+                    </div>
+                    <button 
+                      onClick={() => togglePhase(ch)}
+                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
+                        dsp.phase[ch] ? 'border-neonAmber text-neonAmber bg-amber-500/10' : 'border-slate-700 text-slate-400'
+                      }`}
+                    >
+                      {dsp.phase[ch] ? '180° INV' : '0° NORM'}
+                    </button>
+                  </div>
+
+                  {/* Tombol Pilihan Sumber Routing */}
+                  <div className="grid grid-cols-3 gap-1 mb-2">
+                    {['IN 1 (L)', 'IN 2 (R)', 'SUM'].map((src, srcIdx) => (
+                      <button
+                        key={src}
+                        onClick={() => setRoute(ch, srcIdx)}
+                        className={`py-1.5 rounded text-[9.5px] font-extrabold border transition ${
+                          currentRoute === srcIdx 
+                            ? isDac2 
+                              ? 'bg-neonAmber/20 border-neonAmber text-neonAmber' 
+                              : 'bg-neonCyan/20 border-neonCyan text-neonCyan' 
+                            : 'bg-cardBg border-slate-800 text-slate-400'
+                        }`}
+                      >
+                        {src}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Fader Trim Gain */}
+                  <div className="bg-[#070b12] p-2 rounded-lg border border-[#162130]">
+                    <div className="flex justify-between text-[10px] font-mono mb-1">
+                      <span className="text-slate-400">TRIM GAIN</span>
+                      <span className="text-neonAmber font-bold">{dsp.gain[ch]} dB</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="-40" 
+                      max="6" 
+                      step="1"
+                      value={dsp.gain[ch]} 
+                      onChange={(e) => setOutputGain(ch, Number(e.target.value))}
+                      className="w-full"
+                    />
+                  </div>
+
+                  {/* Tombol Mute */}
+                  <button
+                    onClick={() => toggleMute(ch + 2)}
+                    className={`mt-2 py-2 rounded-lg text-xs font-black border transition flex items-center justify-center gap-1.5 ${
+                      dsp.mute[ch + 2] 
+                        ? 'bg-rose-500/20 border-rose-500 text-rose-400 shadow-[0_0_10px_rgba(244,63,94,0.3)]' 
+                        : 'bg-cardBg border-slate-700 text-slate-300'
+                    }`}
+                  >
+                    {dsp.mute[ch + 2] ? <Icons.VolumeX className="w-3.5 h-3.5" /> : <Icons.Volume2 className="w-3.5 h-3.5" />}
+                    <span>{dsp.mute[ch + 2] ? 'MUTED' : 'MUTE'}</span>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+    // ==========================================
+    // VIEW: CROSSOVER (LR-24dB BERSILANGAN & KOTAK TERPISAH)
+    // ==========================================
+    function XoverView({ dsp, setDsp, selectedCh, setSelectedCh }) {
+      // Ambil frekuensi cut-off aman dengan fallback nilai standar
+      const hpfFreq = dsp?.hpf?.[0] ?? 120; // High Channel HPF
+      const lpfFreq = dsp?.lpf?.[2] ?? 120; // Sub Channel LPF
+      const isHighActive = selectedCh === 0 || selectedCh === 1;
+      const canvasRef = useRef(null);
+
+      const curHpf = dsp?.hpf?.[selectedCh] ?? 120;
+      const curLpf = dsp?.lpf?.[selectedCh] ?? 20000;
+
+      // Render Kurva Crossover Bersilangan
+      useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        const marginL = 28;
+        const marginR = 14;
+        const marginT = 14;
+        const marginB = 22;
+        const plotW = w - marginL - marginR;
+        const plotH = h - marginT - marginB;
+
+        const getY = (db) => marginT + ((6 - db) / 36) * plotH;
+        const logMin = Math.log10(20);
+        const logMax = Math.log10(20000);
+
+        // 1. Garis Desibel (dB)
+        [6, 0, -6, -12, -18, -24, -30].forEach((db) => {
+          const y = getY(db);
+          ctx.strokeStyle = db === 0 ? 'rgba(0, 229, 255, 0.4)' : db === -6 ? 'rgba(255, 201, 74, 0.6)' : 'rgba(30, 41, 59, 0.5)';
+          ctx.lineWidth = db === 0 || db === -6 ? 1.5 : 1;
+          ctx.setLineDash(db === -6 ? [4, 3] : []);
+          ctx.beginPath();
+          ctx.moveTo(marginL, y);
+          ctx.lineTo(w - marginR, y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = db === -6 ? '#ffc94a' : '#708499';
+          ctx.font = '8.5px monospace';
+          ctx.textAlign = 'right';
+          ctx.fillText((db > 0 ? '+' : '') + db, 24, y + 3);
+        });
+
+        // 2. Garis Frekuensi (Hz)
+        [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000].forEach((f) => {
+          const x = marginL + ((Math.log10(f) - logMin) / (logMax - logMin)) * plotW;
+          ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(x, marginT);
+          ctx.lineTo(x, h - marginB);
+          ctx.stroke();
+          const label = f >= 1000 ? `${f / 1000}k` : `${f}`;
+          ctx.fillStyle = '#708499';
+          ctx.font = '8.5px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(label, x, h - 6);
+        });
+
+        // 3. Kurva LOW / SUB (Cyan)
+        ctx.beginPath();
+        ctx.strokeStyle = isHighActive ? '#007c8a' : '#00e5ff';
+        ctx.lineWidth = isHighActive ? 1.5 : 2.5;
+        if (!isHighActive) {
+          ctx.shadowColor = '#00e5ff';
+          ctx.shadowBlur = 8;
+        }
+        for (let px = 0; px <= plotW; px += 2) {
+          const f = Math.pow(10, logMin + (px / plotW) * (logMax - logMin));
+          const drop = lpfFreq < 20000 ? -20 * Math.log10(1 + Math.pow(f / lpfFreq, 4)) : 0;
+          const y = getY(Math.max(-30, Math.min(6, drop)));
+          if (px === 0) ctx.moveTo(marginL + px, y);
+          else ctx.lineTo(marginL + px, y);
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // 4. Kurva HIGH / TOP (Rose/Merah)
+        ctx.beginPath();
+        ctx.strokeStyle = isHighActive ? '#ff3366' : '#7a1c33';
+        ctx.lineWidth = isHighActive ? 2.5 : 1.5;
+        if (isHighActive) {
+          ctx.shadowColor = '#ff3366';
+          ctx.shadowBlur = 8;
+        }
+        for (let px = 0; px <= plotW; px += 2) {
+          const f = Math.pow(10, logMin + (px / plotW) * (logMax - logMin));
+          const drop = hpfFreq > 20 ? -20 * Math.log10(1 + Math.pow(hpfFreq / f, 4)) : 0;
+          const y = getY(Math.max(-30, Math.min(6, drop)));
+          if (px === 0) ctx.moveTo(marginL + px, y);
+          else ctx.lineTo(marginL + px, y);
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Label Titik Cutoff -6 dB
+        ctx.fillStyle = '#ffc94a';
+        ctx.font = 'bold 9px monospace';
+        ctx.textAlign = 'center';
+        const hpfX = marginL + ((Math.log10(hpfFreq) - logMin) / (logMax - logMin)) * plotW;
+        const lpfX = marginL + ((Math.log10(lpfFreq) - logMin) / (logMax - logMin)) * plotW;
+        ctx.fillText(`HPF: ${hpfFreq}Hz`, Math.max(65, Math.min(w - 45, hpfX)), getY(-6) - 8);
+        ctx.fillText(`LPF: ${lpfFreq}Hz`, Math.max(65, Math.min(w - 45, lpfX)), getY(-6) + 16);
+
+      }, [hpfFreq, lpfFreq, isHighActive]);
+
+      const setHpf = (val) => {
+        const clamped = Math.max(20, Math.min(2000, val));
+        const next = [...(dsp?.hpf || [120, 120, 35, 35])];
+        next[selectedCh] = clamped;
+        setDsp(p => ({ ...p, hpf: next }));
+        dspDriver.sendCommand(CMD.SET_XOVER_HPF, [selectedCh, ...packInt16(clamped)]);
+      };
+
+      const setLpf = (val) => {
+        const clamped = Math.max(200, Math.min(20000, val));
+        const next = [...(dsp?.lpf || [20000, 20000, 120, 120])];
+        next[selectedCh] = clamped;
+        setDsp(p => ({ ...p, lpf: next }));
+        dspDriver.sendCommand(CMD.SET_XOVER_LPF, [selectedCh, ...packInt16(clamped)]);
+      };
+
+      return (
+        <div className="space-y-3">
+          {/* Pilihan Kanal OUT 1 - 4 */}
+          <div className="grid grid-cols-4 gap-1.5 p-1 bg-panelBg border border-[#1e293b] rounded-xl">
+            {CHANNELS.map((ch, idx) => (
+              <button
+                key={ch}
+                onClick={() => setSelectedCh(idx)}
+                className={`py-2 rounded-lg text-xs font-black transition ${
+                  selectedCh === idx 
+                    ? 'bg-neonCyan text-slate-950 shadow-[0_0_10px_rgba(0,229,255,0.4)]' 
+                    : 'text-slate-400 bg-cardBg'
+                }`}
+              >
+                {ch}
+              </button>
+            ))}
+          </div>
+
+          <div className="bg-panelBg border border-[#1e293b] rounded-xl p-3 space-y-3">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xs font-black text-neonCyan tracking-wider flex items-center gap-1.5 m-0">
+                <Icons.Activity className="w-4 h-4" /> CROSSOVER ALIGNMENT (LR-24dB)
+              </h2>
+              <div className="flex items-center gap-2 text-[8px] font-bold">
+                <span className={isHighActive ? 'text-neonRose' : 'text-slate-500'}>● OUT 1/2 HIGH</span>
+                <span className={!isHighActive ? 'text-neonCyan' : 'text-slate-500'}>● OUT 3/4 LOW</span>
+              </div>
+            </div>
+
+            {/* Canvas Grafik Respon Bersilangan */}
+            <div className="bg-[#05070c] border border-[#182333] rounded-lg p-1.5 overflow-hidden">
+              <canvas ref={canvasRef} width="600" height="200" className="w-full h-auto block" />
+            </div>
+
+            <p className="text-[8.5px] text-slate-400 m-0">
+              Titik potong antar channel bertemu di <b className="text-neonAmber">-6.0 dB</b> untuk penjumlahan respon rata (Flat Sum Linkwitz-Riley 24dB/oct).
+            </p>
+
+            {/* SLIDER HPF & LPF TERPISAH DI DALAM KOTAK GARIS */}
+            <div className="space-y-2.5">
+              {/* KOTAK 1: HPF (LOW-CUT) */}
+              <div className="bg-[#090e17] border border-rose-500/35 rounded-xl p-3 space-y-2 shadow-sm">
+                <div className="flex justify-between items-center text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_6px_#ff3366]"></span>
+                    <span className="font-extrabold text-rose-400">
+                      HPF (LOW-CUT) — {CHANNELS[selectedCh]}
+                    </span>
+                  </div>
+                  <span className="font-mono text-neonAmber font-black text-sm">
+                    {curHpf} Hz
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-2 pt-1">
+                  <button 
+                    onClick={() => setHpf(Math.max(20, curHpf - 5))}
+                    className="p-2 bg-[#141b27] border border-rose-500/40 rounded-lg text-rose-400 active:scale-95 transition"
+                    title="Turun 5 Hz"
+                  >
+                    <Icons.Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <input 
+                    type="range" 
+                    min="20" 
+                    max="2000" 
+                    step="5"
+                    value={curHpf} 
+                    onChange={(e) => setHpf(Number(e.target.value))}
+                    className="w-full accent-rose-500 cursor-pointer"
+                  />
+                  <button 
+                    onClick={() => setHpf(Math.min(2000, curHpf + 5))}
+                    className="p-2 bg-[#141b27] border border-rose-500/40 rounded-lg text-rose-400 active:scale-95 transition"
+                    title="Naik 5 Hz"
+                  >
+                    <Icons.Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                
+                <div className="flex justify-between text-[9px] font-mono text-slate-500 px-0.5">
+                  <span>20 Hz (FLAT)</span>
+                  <span>2000 Hz</span>
+                </div>
+              </div>
+
+              {/* KOTAK 2: LPF (HIGH-CUT) */}
+              <div className="bg-[#090e17] border border-neonCyan/35 rounded-xl p-3 space-y-2 shadow-sm">
+                <div className="flex justify-between items-center text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-neonCyan shadow-[0_0_6px_#00e5ff]"></span>
+                    <span className="font-extrabold text-neonCyan">
+                      LPF (HIGH-CUT) — {CHANNELS[selectedCh]}
+                    </span>
+                  </div>
+                  <span className="font-mono text-neonAmber font-black text-sm">
+                    {curLpf >= 20000 ? 'BYPASS (20k)' : `${curLpf} Hz`}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <button 
+                    onClick={() => setLpf(Math.max(200, curLpf - 50))}
+                    className="p-2 bg-[#141b27] border border-neonCyan/40 rounded-lg text-neonCyan active:scale-95 transition"
+                    title="Turun 50 Hz"
+                  >
+                    <Icons.Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <input 
+                    type="range" 
+                    min="200" 
+                    max="20000" 
+                    step="50"
+                    value={curLpf} 
+                    onChange={(e) => setLpf(Number(e.target.value))}
+                    className="w-full accent-neonCyan cursor-pointer"
+                  />
+                  <button 
+                    onClick={() => setLpf(Math.min(20000, curLpf + 50))}
+                    className="p-2 bg-[#141b27] border border-neonCyan/40 rounded-lg text-neonCyan active:scale-95 transition"
+                    title="Naik 50 Hz"
+                  >
+                    <Icons.Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="flex justify-between text-[9px] font-mono text-slate-500 px-0.5">
+                  <span>200 Hz</span>
+                  <span>20,000 Hz (BYPASS)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+// ==========================================
+    // TEMPLATE PARAMETRIC EQ AUDIO PRO
+    // ==========================================
+    const EQ_TEMPLATES = {
+      flat: {
+        name: "1. FLAT / LINEAR (RESET 0 dB)",
+        freqIdx: [6, 9, 13, 16, 19, 22, 25, 28, 31],
+        gain: [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        q: [10, 10, 10, 10, 10, 10, 10, 10, 10]
+      },
+      bass_boost: {
+        name: "2. BASS BOOST / SUB LAPANGAN",
+        freqIdx: [5, 7, 9, 13, 19, 23, 26, 29, 31],
+        gain: [45, 60, 30, -35, 0, 0, 15, 25, 30],
+        q: [14, 12, 10, 18, 10, 10, 10, 12, 10]
+      },
+      vocal_clarity: {
+        name: "3. VOCAL CLARITY (BERSIH & LANTANG)",
+        freqIdx: [7, 10, 14, 16, 19, 23, 25, 28, 31],
+        gain: [-60, -20, -30, -25, 10, 45, 35, 20, 0],
+        q: [18, 14, 16, 14, 10, 14, 12, 10, 10]
+      },
+      v_shape: {
+        name: "4. V-SHAPE / CLUB DISCO DJ",
+        freqIdx: [6, 8, 11, 15, 18, 21, 24, 27, 30],
+        gain: [50, 45, 15, -30, -40, -20, 15, 40, 50],
+        q: [12, 12, 10, 12, 12, 10, 10, 12, 14]
+      },
+      subwoofer_punch: {
+        name: "5. SUBWOOFER ONLY (PUNCH 45Hz)",
+        freqIdx: [4, 6, 8, 10, 12, 15, 18, 21, 25],
+        gain: [20, 60, 50, 15, -40, -80, -100, -120, -120],
+        q: [14, 16, 14, 12, 16, 20, 20, 20, 20]
+      },
+      bright_tweeter: {
+        name: "6. BRIGHT AIR / TWEETER CRISP",
+        freqIdx: [16, 19, 22, 24, 26, 28, 29, 30, 31],
+        gain: [-60, -40, -15, -30, 10, 30, 45, 50, 40],
+        q: [10, 10, 12, 10, 12, 14, 16, 16, 18]
+      },
+      anti_feedback: {
+        name: "7. NOTCH / ANTI-FEEDBACK DENGUNG",
+        freqIdx: [6, 9, 13, 16, 18, 20, 22, 24, 26],
+        gain: [0, 0, 0, -100, -120, -120, 0, 0, 0],
+        q: [10, 10, 10, 45, 60, 60, 10, 10, 10]
+      }
+    };
+// ==========================================
+    // VIEW: 9-BAND PEQ DENGAN BYPASS, FLAT ALL, COPY/PASTE & TEMPLATES
+    // ==========================================
+    function EqRtaView({ dsp, setDsp, selectedCh, setSelectedCh, rtaHardwareData, connected, showToast }) {
+      const [selectedBand, setSelectedBand] = useState(0);
+      const [selectedTemplate, setSelectedTemplate] = useState('');
+      const [copiedEq, setCopiedEq] = useState(null);
+      const [bypassState, setBypassState] = useState([false, false, false, false]);
+      const [gainBackup, setGainBackup] = useState([[], [], [], []]);
+      const [useMicRta, setUseMicRta] = useState(false);
+      const canvasRef = useRef(null);
+
+      const freqIdx = dsp.peqFreqIdx[selectedCh][selectedBand];
+      const gainVal = dsp.peqGain[selectedCh][selectedBand] / 10;
+      const qVal = dsp.peqQ[selectedCh][selectedBand] / 10;
+      const isBypassed = bypassState[selectedCh];
+
+      // 1. Terapkan Template Preset
+      const applyTemplate = () => {
+        if (!selectedTemplate || !EQ_TEMPLATES[selectedTemplate]) {
+          showToast("Pilih template terlebih dahulu");
+          return;
+        }
+        const t = EQ_TEMPLATES[selectedTemplate];
+        const nextF = dsp.peqFreqIdx.map(ch => [...ch]);
+        const nextG = dsp.peqGain.map(ch => [...ch]);
+        const nextQ = dsp.peqQ.map(ch => [...ch]);
+
+        for (let b = 0; b < 9; b++) {
+          nextF[selectedCh][b] = t.freqIdx[b];
+          nextG[selectedCh][b] = t.gain[b];
+          nextQ[selectedCh][b] = t.q[b];
+
+          // Transmisi biner ke board ESP32
+          dspDriver.sendCommand(CMD.SET_PEQ, [
+            selectedCh,
+            b,
+            t.freqIdx[b],
+            ...packInt16(t.gain[b]),
+            ...packUint16(t.q[b])
+          ]);
+        }
+
+        setDsp(p => ({ ...p, peqFreqIdx: nextF, peqGain: nextG, peqQ: nextQ }));
+        showToast(`Template ${t.name.split('.')[1]} Diterapkan!`);
+      };
+
+      // 2. Toggle Bypass (Flat sementara tanpa menghapus settingan asli)
+      const handleBypass = () => {
+        const nextBypassVal = !isBypassed;
+        const nextBypass = [...bypassState];
+        nextBypass[selectedCh] = nextBypassVal;
+        setBypassState(nextBypass);
+
+        if (nextBypassVal) {
+          // Simpan nilai gain saat ini ke memori backup
+          const nextBackup = [...gainBackup];
+          nextBackup[selectedCh] = [...dsp.peqGain[selectedCh]];
+          setGainBackup(nextBackup);
+
+          // Buat flat (0 dB) pada state dan kirim ke DSP
+          const nextG = dsp.peqGain.map(ch => [...ch]);
+          nextG[selectedCh] = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+          setDsp(p => ({ ...p, peqGain: nextG }));
+
+          for (let b = 0; b < 9; b++) {
+            dspDriver.sendCommand(CMD.SET_PEQ, [
+              selectedCh,
+              b,
+              dsp.peqFreqIdx[selectedCh][b],
+              ...packInt16(0),
+              ...packUint16(dsp.peqQ[selectedCh][b])
+            ]);
+          }
+          showToast(`EQ ${CHANNELS[selectedCh]} DIBYPASS (FLAT)`);
+        } else {
+          // Pulihkan nilai gain dari backup
+          const restored = gainBackup[selectedCh] || [0, 0, 0, 0, 0, 0, 0, 0, 0];
+          const nextG = dsp.peqGain.map(ch => [...ch]);
+          nextG[selectedCh] = [...restored];
+          setDsp(p => ({ ...p, peqGain: nextG }));
+
+          for (let b = 0; b < 9; b++) {
+            dspDriver.sendCommand(CMD.SET_PEQ, [
+              selectedCh,
+              b,
+              dsp.peqFreqIdx[selectedCh][b],
+              ...packInt16(restored[b] || 0),
+              ...packUint16(dsp.peqQ[selectedCh][b])
+            ]);
+          }
+          showToast(`EQ ${CHANNELS[selectedCh]} AKTIF KEMBALI`);
+        }
+      };
+
+      // 3. Flat All (Reset permanen ke 0.0 dB)
+      const handleFlatAll = () => {
+        const nextG = dsp.peqGain.map(ch => [...ch]);
+        nextG[selectedCh] = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+        setDsp(p => ({ ...p, peqGain: nextG }));
+
+        for (let b = 0; b < 9; b++) {
+          dspDriver.sendCommand(CMD.SET_PEQ, [
+            selectedCh,
+            b,
+            dsp.peqFreqIdx[selectedCh][b],
+            ...packInt16(0),
+            ...packUint16(dsp.peqQ[selectedCh][b])
+          ]);
+        }
+        showToast(`Semua 9 Band ${CHANNELS[selectedCh]} Direset 0 dB`);
+      };
+
+      // 4. Copy Parameter Channel Ini
+      const handleCopy = () => {
+        setCopiedEq({
+          freq: [...dsp.peqFreqIdx[selectedCh]],
+          gain: [...dsp.peqGain[selectedCh]],
+          q: [...dsp.peqQ[selectedCh]]
+        });
+        showToast(`EQ ${CHANNELS[selectedCh]} Berhasil Disalin!`);
+      };
+
+      // 5. Paste Parameter ke Channel Ini
+      const handlePaste = () => {
+        if (!copiedEq) {
+          showToast("Salin EQ terlebih dahulu");
+          return;
+        }
+        const nextF = dsp.peqFreqIdx.map(ch => [...ch]);
+        const nextG = dsp.peqGain.map(ch => [...ch]);
+        const nextQ = dsp.peqQ.map(ch => [...ch]);
+
+        nextF[selectedCh] = [...copiedEq.freq];
+        nextG[selectedCh] = [...copiedEq.gain];
+        nextQ[selectedCh] = [...copiedEq.q];
+
+        for (let b = 0; b < 9; b++) {
+          dspDriver.sendCommand(CMD.SET_PEQ, [
+            selectedCh,
+            b,
+            copiedEq.freq[b],
+            ...packInt16(copiedEq.gain[b]),
+            ...packUint16(copiedEq.q[b])
+          ]);
+        }
+
+        setDsp(p => ({ ...p, peqFreqIdx: nextF, peqGain: nextG, peqQ: nextQ }));
+        showToast(`EQ Ditempelkan ke ${CHANNELS[selectedCh]}!`);
+      };
+
+      // Toggle Mic HP untuk RTA lokal
+      const toggleMic = async () => {
+        if (!useMicRta) {
+          try {
+            await micAnalyzer.start();
+            setUseMicRta(true);
+            showToast("Mic HP Aktif untuk RTA Real-time");
+          } catch(err) {
+            showToast("Izin mic ditolak / tidak didukung");
+          }
+        } else {
+          micAnalyzer.stop();
+          setUseMicRta(false);
+          showToast("Mic HP Dimatikan");
+        }
+      };
+
+      // Render Loop Canvas
+      useEffect(() => {
+        let animId;
+        const render = () => {
+          const canvas = canvasRef.current;
+          if (!canvas) return;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return;
+
+          const w = canvas.width;
+          const h = canvas.height;
+          ctx.clearRect(0, 0, w, h);
+
+          const marginL = 20;
+          const marginR = 14;
+          const marginT = 14;
+          const marginB = 22;
+          const plotW = w - marginL - marginR;
+          const plotH = h - marginT - marginB;
+          const midY = marginT + plotH / 2;
+          const logMin = Math.log10(20);
+          const logMax = Math.log10(20000);
+
+          // Grid Garis Desibel
+          [12, 6, 0, -6, -12].forEach(db => {
+            const y = midY - (db / 12) * (plotH / 2);
+            ctx.strokeStyle = db === 0 ? 'rgba(0, 229, 255, 0.4)' : 'rgba(30, 41, 59, 0.6)';
+            ctx.lineWidth = db === 0 ? 1.5 : 1;
+            ctx.beginPath();
+            ctx.moveTo(marginL, y);
+            ctx.lineTo(w - marginR, y);
+            ctx.stroke();
+            ctx.fillStyle = '#708499';
+            ctx.font = '8.5px monospace';
+            ctx.textAlign = 'left';
+            if (db !== 0) ctx.fillText((db > 0 ? '+' : '') + db + 'dB', marginL + 2, y - 2);
+          });
+
+          // Grid Frekuensi Vertikal
+          [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000].forEach(f => {
+            const x = marginL + ((Math.log10(f) - logMin) / (logMax - logMin)) * plotW;
+            ctx.strokeStyle = 'rgba(30, 41, 59, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x, marginT);
+            ctx.lineTo(x, h - marginB);
+            ctx.stroke();
+            const label = f >= 1000 ? `${f / 1000}k` : `${f}`;
+            ctx.fillStyle = '#708499';
+            ctx.font = '8.5px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, x, h - 6);
+          });
+
+          // Render RTA Riil (ESP32 Hardware atau Mic HP)
+          const activeRta = useMicRta ? micAnalyzer.getBands() : (connected ? rtaHardwareData : null);
+
+          if (activeRta && activeRta.length === 33) {
+            const barW = (plotW / 33) - 2;
+            for (let i = 0; i < 33; i++) {
+              const mag = activeRta[i];
+              const barH = mag * (plotH - 10);
+              const x = marginL + i * (barW + 2) + 1;
+              const y = h - marginB - barH;
+
+              const grad = ctx.createLinearGradient(0, h - marginB, 0, y);
+              grad.addColorStop(0, 'rgba(0, 229, 255, 0.4)');
+              grad.addColorStop(0.7, 'rgba(62, 232, 154, 0.7)');
+              grad.addColorStop(1, '#ffc94a');
+
+              ctx.fillStyle = grad;
+              ctx.fillRect(x, y, barW, barH);
+            }
+          } else {
+            ctx.fillStyle = 'rgba(112, 132, 153, 0.4)';
+            ctx.font = '9px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(
+              useMicRta ? "MENUNGGU AUDIO DARI MIC HP..." : 
+              connected ? "MENUNGGU STREAM RTA HARDWARE ESP32..." : 
+              "OFFLINE — HUBUNGKAN ESP32 ATAU AKTIFKAN MIC HP", 
+              w / 2, 
+              h - marginB - 6
+            );
+          }
+
+          // Kurva Respon EQ 9-Band (Biquad Filter Math)
+          ctx.beginPath();
+          ctx.strokeStyle = isBypassed ? '#ff3366' : '#00e5ff';
+          ctx.lineWidth = 2.5;
+          ctx.shadowColor = isBypassed ? '#ff3366' : '#00e5ff';
+          ctx.shadowBlur = 8;
+
+          for (let px = 0; px <= plotW; px += 2) {
+            const f = Math.pow(10, logMin + (px / plotW) * (logMax - logMin));
+            let totalGain = 0;
+            for (let b = 0; b < 9; b++) {
+              const bf = ISO_FREQS[dsp.peqFreqIdx[selectedCh][b]];
+              const bg = dsp.peqGain[selectedCh][b] / 10;
+              const bq = dsp.peqQ[selectedCh][b] / 10;
+              totalGain += calcBiquadPeqGain(bf, bg, bq, f);
+            }
+            const y = midY - (totalGain / 12) * (plotH / 2);
+            const clampedY = Math.max(marginT, Math.min(h - marginB, y));
+            if (px === 0) ctx.moveTo(marginL + px, clampedY);
+            else ctx.lineTo(marginL + px, clampedY);
+          }
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+
+          // Titik Pin Band 1-9
+          for (let b = 0; b < 9; b++) {
+            const bf = ISO_FREQS[dsp.peqFreqIdx[selectedCh][b]];
+            const x = marginL + ((Math.log10(bf) - logMin) / (logMax - logMin)) * plotW;
+            let totalGain = 0;
+            for (let i = 0; i < 9; i++) {
+              totalGain += calcBiquadPeqGain(
+                ISO_FREQS[dsp.peqFreqIdx[selectedCh][i]],
+                dsp.peqGain[selectedCh][i] / 10,
+                dsp.peqQ[selectedCh][i] / 10,
+                bf
+              );
+            }
+            const y = midY - (totalGain / 12) * (plotH / 2);
+            const clampedY = Math.max(marginT + 4, Math.min(h - marginB - 4, y));
+            const isSelected = b === selectedBand;
+
+            if (isSelected) {
+              ctx.beginPath();
+              ctx.arc(x, clampedY, 8, 0, Math.PI * 2);
+              ctx.strokeStyle = '#ffc94a';
+              ctx.lineWidth = 2;
+              ctx.stroke();
+            }
+
+            ctx.beginPath();
+            ctx.arc(x, clampedY, isSelected ? 4.5 : 3.5, 0, Math.PI * 2);
+            ctx.fillStyle = isSelected ? '#ffc94a' : '#3ee89a';
+            ctx.fill();
+
+            ctx.fillStyle = isSelected ? '#ffc94a' : '#708499';
+            ctx.font = 'bold 8.5px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${b + 1}`, x, clampedY >= midY ? clampedY + 12 : clampedY - 7);
+          }
+
+          animId = requestAnimationFrame(render);
+        };
+
+        render();
+        return () => cancelAnimationFrame(animId);
+      }, [dsp, selectedCh, selectedBand, rtaHardwareData, connected, useMicRta, isBypassed]);
+
+      const updateBand = (type, val) => {
+        const nextF = dsp.peqFreqIdx.map(ch => [...ch]);
+        const nextG = dsp.peqGain.map(ch => [...ch]);
+        const nextQ = dsp.peqQ.map(ch => [...ch]);
+
+        if (type === 'freq') nextF[selectedCh][selectedBand] = val;
+        if (type === 'gain') nextG[selectedCh][selectedBand] = Math.round(val * 10);
+        if (type === 'q') nextQ[selectedCh][selectedBand] = Math.round(val * 10);
+
+        setDsp(p => ({ ...p, peqFreqIdx: nextF, peqGain: nextG, peqQ: nextQ }));
+
+        dspDriver.sendCommand(CMD.SET_PEQ, [
+          selectedCh,
+          selectedBand,
+          nextF[selectedCh][selectedBand],
+          ...packInt16(nextG[selectedCh][selectedBand]),
+          ...packUint16(nextQ[selectedCh][selectedBand])
+        ]);
+      };
+
+      return (
+        <div className="space-y-3">
+          {/* Channel Selector */}
+          <div className="grid grid-cols-4 gap-1.5 p-1 bg-panelBg border border-[#1e293b] rounded-xl">
+            {CHANNELS.map((ch, idx) => (
+              <button
+                key={ch}
+                onClick={() => setSelectedCh(idx)}
+                className={`py-2 rounded-lg text-xs font-black transition ${
+                  selectedCh === idx 
+                    ? 'bg-neonCyan text-slate-950 shadow-[0_0_10px_rgba(0,229,255,0.4)]' 
+                    : 'text-slate-400 bg-cardBg'
+                }`}
+              >
+                {ch}
+              </button>
+            ))}
+          </div>
+
+          <div className="bg-panelBg border border-[#1e293b] rounded-xl p-3 space-y-3">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xs font-black text-neonCyan tracking-wider m-0">
+                9-BAND PEQ — {CHANNELS[selectedCh]}
+              </h2>
+              {isBypassed && (
+                <span className="text-[7.5px] font-black px-1.5 py-0.5 rounded bg-rose-500/20 border border-rose-500 text-rose-400 shadow-[0_0_6px_rgba(244,63,94,0.4)]">
+                  BYPASS AKTIF (0 dB)
+                </span>
+              )}
+            </div>
+
+            {/* BARIS PRESET TEMPLATE AUDIO */}
+            <div className="flex gap-1.5">
+              <select
+                value={selectedTemplate}
+                onChange={(e) => setSelectedTemplate(e.target.value)}
+                className="flex-1 bg-gradient-to-b from-[#141b27] to-[#0a0e16] border border-[#1c2738] text-neonCyan font-mono text-[10px] font-bold p-2 rounded-lg outline-none"
+              >
+                <option value="">-- PILIH TEMPLATE PRESET EQ --</option>
+                {Object.entries(EQ_TEMPLATES).map(([key, tpl]) => (
+                  <option key={key} value={key} className="bg-cardBg text-slate-100 font-sans">
+                    {tpl.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={applyTemplate}
+                className="px-3 py-1.5 text-[10px] font-black bg-gradient-to-b from-[#182232] to-[#0c121d] border border-neonCyan/50 text-neonCyan rounded-lg hover:border-neonCyan active:scale-95 transition"
+              >
+                TERAPKAN
+              </button>
+            </div>
+
+            {/* BARIS TOMBOL AKSI CEPAT: BYPASS, FLAT ALL, COPY, PASTE, MIC RTA */}
+            <div className="grid grid-cols-5 gap-1">
+              {/* BYPASS */}
+              <button
+                onClick={handleBypass}
+                className={`py-1.5 px-1 text-[8.5px] font-black rounded-lg border transition text-center ${
+                  isBypassed 
+                    ? 'bg-rose-500/25 border-rose-500 text-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.4)]' 
+                    : 'bg-cardBg border-slate-700 text-slate-300'
+                }`}
+              >
+                {isBypassed ? 'BYPASS ON' : 'BYPASS'}
+              </button>
+
+              {/* FLAT ALL */}
+              <button
+                onClick={handleFlatAll}
+                className="py-1.5 px-1 text-[8.5px] font-black rounded-lg bg-cardBg border border-slate-700 text-slate-300 hover:text-white active:scale-95 transition text-center"
+              >
+                FLAT ALL
+              </button>
+
+              {/* COPY */}
+              <button
+                onClick={handleCopy}
+                className="py-1.5 px-1 text-[8.5px] font-black rounded-lg bg-cardBg border border-slate-700 text-slate-300 hover:text-neonCyan active:scale-95 transition text-center"
+              >
+                COPY
+              </button>
+
+              {/* PASTE */}
+              <button
+                onClick={handlePaste}
+                disabled={!copiedEq}
+                className="py-1.5 px-1 text-[8.5px] font-black rounded-lg bg-cardBg border border-slate-700 text-slate-300 disabled:opacity-40 hover:text-neonAmber active:scale-95 transition text-center"
+              >
+                PASTE
+              </button>
+
+              {/* MIC HP */}
+              <button
+                onClick={toggleMic}
+                className={`py-1.5 px-1 text-[8.5px] font-black rounded-lg border transition text-center ${
+                  useMicRta 
+                    ? 'border-neonGreen text-neonGreen bg-neonGreen/10 shadow-[0_0_6px_rgba(62,232,154,0.4)]' 
+                    : 'border-slate-700 text-slate-400 bg-cardBg'
+                }`}
+              >
+                {useMicRta ? 'MIC: ON' : 'MIC HP'}
+              </button>
+            </div>
+
+            {/* Canvas Kurva EQ & RTA */}
+            <div className="bg-[#05070c] border border-[#182333] rounded-lg p-1.5 overflow-hidden">
+              <canvas ref={canvasRef} width="600" height="210" className="w-full h-auto block" />
+            </div>
+
+            {/* Band 1-9 Buttons */}
+            <div className="grid grid-cols-9 gap-1">
+              {Array.from({ length: 9 }).map((_, b) => (
+                <button
+                  key={b}
+                  onClick={() => setSelectedBand(b)}
+                  className={`py-1.5 rounded text-xs font-mono font-bold border transition ${
+                    selectedBand === b 
+                      ? 'bg-neonAmber text-slate-950 border-neonAmber font-black' 
+                      : 'bg-cardBg border-slate-800 text-slate-400'
+                  }`}
+                >
+                  {b + 1}
+                </button>
+              ))}
+            </div>
+
+            {/* Fader Band Parameter */}
+            <div className="space-y-3 bg-cardBg p-3 rounded-xl border border-[#1c2738]">
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-slate-400 font-bold">FREKUENSI BAND #{selectedBand + 1}</span>
+                  <span className="text-neonCyan font-mono font-black">{ISO_FREQS[freqIdx]} Hz</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => updateBand('freq', Math.max(0, freqIdx - 1))} className="p-2 bg-[#141b27] border border-slate-700 rounded-lg text-neonCyan active:scale-95">
+                    <Icons.Minus className="w-4 h-4" />
+                  </button>
+                  <input type="range" min="0" max="32" step="1" value={freqIdx} onChange={(e) => updateBand('freq', Number(e.target.value))} className="w-full" />
+                  <button onClick={() => updateBand('freq', Math.min(32, freqIdx + 1))} className="p-2 bg-[#141b27] border border-slate-700 rounded-lg text-neonCyan active:scale-95">
+                    <Icons.Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-slate-400 font-bold">GAIN (BOOST / CUT)</span>
+                  <span className="text-neonAmber font-mono font-black">{gainVal > 0 ? `+${gainVal}` : gainVal} dB</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => updateBand('gain', Math.max(-12, Math.round((gainVal - 0.5) * 10) / 10))} className="p-2 bg-[#141b27] border border-slate-700 rounded-lg text-neonAmber active:scale-95">
+                    <Icons.Minus className="w-4 h-4" />
+                  </button>
+                  <input type="range" min="-12" max="12" step="0.1" value={gainVal} onChange={(e) => updateBand('gain', Number(e.target.value))} className="w-full" />
+                  <button onClick={() => updateBand('gain', Math.min(12, Math.round((gainVal + 0.5) * 10) / 10))} className="p-2 bg-[#141b27] border border-slate-700 rounded-lg text-neonAmber active:scale-95">
+                    <Icons.Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-slate-400 font-bold">Q FACTOR (BANDWIDTH)</span>
+                  <span className="text-neonGreen font-mono font-black">{qVal.toFixed(1)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => updateBand('q', Math.max(0.3, Math.round((qVal - 0.1) * 10) / 10))} className="p-2 bg-[#141b27] border border-slate-700 rounded-lg text-neonGreen active:scale-95">
+                    <Icons.Minus className="w-4 h-4" />
+                  </button>
+                  <input type="range" min="0.3" max="10" step="0.1" value={qVal} onChange={(e) => updateBand('q', Number(e.target.value))} className="w-full" />
+                  <button onClick={() => updateBand('q', Math.min(10, Math.round((qVal + 0.1) * 10) / 10))} className="p-2 bg-[#141b27] border border-slate-700 rounded-lg text-neonGreen active:scale-95">
+                    <Icons.Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    // ==========================================
+    // 8. VIEW: TIME ALIGNMENT DELAY
+    // ==========================================
+    function DelayView({ dsp, setDsp, selectedCh, setSelectedCh }) {
+      const delayMs = dsp.delay[selectedCh];
+      const meters = ((delayMs / 1000) * 343).toFixed(2);
+      const feet = (((delayMs / 1000) * 343) * 3.28084).toFixed(2);
+
+      const setDelay = (val) => {
+        const clamped = Math.max(0, Math.min(300, Math.round(val * 10) / 10));
+        const next = [...dsp.delay];
+        next[selectedCh] = clamped;
+        setDsp(p => ({ ...p, delay: next }));
+        dspDriver.sendCommand(CMD.SET_DELAY, [selectedCh, ...packInt16(clamped * 10)]);
+      };
+
+      return (
+        <div className="space-y-3">
+          <div className="grid grid-cols-4 gap-1.5 p-1 bg-panelBg border border-[#1e293b] rounded-xl">
+            {CHANNELS.map((ch, idx) => (
+              <button
+                key={ch}
+                onClick={() => setSelectedCh(idx)}
+                className={`py-2 rounded-lg text-xs font-black transition ${
+                  selectedCh === idx 
+                    ? 'bg-neonCyan text-slate-950 shadow-[0_0_10px_rgba(0,229,255,0.4)]' 
+                    : 'text-slate-400 bg-cardBg'
+                }`}
+              >
+                {ch}
+              </button>
+            ))}
+          </div>
+
+          <div className="bg-panelBg border border-[#1e293b] rounded-xl p-4 space-y-4">
+            <h2 className="text-xs font-black text-neonCyan tracking-wider flex items-center gap-1.5 m-0">
+              <Icons.Clock className="w-4 h-4" /> TIME ALIGNMENT — {CHANNELS[selectedCh]}
+            </h2>
+
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="bg-cardBg p-2.5 rounded-xl border border-[#1c2738]">
+                <span className="text-[10px] text-slate-400 block font-bold">WAKTU</span>
+                <span className="text-base font-mono font-black text-neonCyan">{delayMs.toFixed(1)} ms</span>
+              </div>
+              <div className="bg-cardBg p-2.5 rounded-xl border border-[#1c2738]">
+                <span className="text-[10px] text-slate-400 block font-bold">JARAK (M)</span>
+                <span className="text-base font-mono font-black text-neonAmber">{meters} m</span>
+              </div>
+              <div className="bg-cardBg p-2.5 rounded-xl border border-[#1c2738]">
+                <span className="text-[10px] text-slate-400 block font-bold">JARAK (FT)</span>
+                <span className="text-base font-mono font-black text-neonGreen">{feet} ft</span>
+              </div>
+            </div>
+
+            <div className="p-3 bg-cardBg rounded-xl border border-[#1c2738]">
+              <div className="flex items-center gap-2">
+                <button onClick={() => setDelay(delayMs - 0.5)} className="p-2.5 bg-[#141b27] border border-slate-700 rounded-lg text-neonCyan active:scale-95">
+                  <Icons.Minus className="w-5 h-5" />
+                </button>
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="300" 
+                  step="0.1" 
+                  value={delayMs} 
+                  onChange={(e) => setDelay(Number(e.target.value))} 
+                  className="w-full h-3 accent-neonCyan" 
+                />
+                <button onClick={() => setDelay(delayMs + 0.5)} className="p-2.5 bg-[#141b27] border border-slate-700 rounded-lg text-neonCyan active:scale-95">
+                  <Icons.Plus className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // 9. VIEW: LIMITER / COMPRESSOR DENGAN GR METER
+    // ==========================================
+    function CompView({ dsp, setDsp, selectedCh, setSelectedCh, meters }) {
+      const thresh = dsp.limThresh[selectedCh];
+      const ratio = dsp.limRatio[selectedCh];
+      const canvasRef = useRef(null);
+
+      // Hitung Pengurangan Penguatan (Gain Reduction dB)
+      const chMeter = meters[selectedCh + 2] || 0;
+      const currentLevelDb = (chMeter / 255) * 60 - 60; // -60dB .. 0dBFS
+      let grDb = 0;
+      if (currentLevelDb > thresh && ratio > 1) {
+        grDb = (currentLevelDb - thresh) * (1 - 1 / ratio);
+      }
+      const grPct = Math.min(100, Math.round((grDb / 20) * 100));
+
+      // Gambar Kurva Transfer Karakteristik Limiter
+      useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        const pad = 24;
+        const plotW = w - pad * 2;
+        const plotH = h - pad * 2;
+
+        ctx.strokeStyle = 'rgba(30, 41, 59, 0.6)';
+        ctx.lineWidth = 1;
+        for (let i = 1; i < 4; i++) {
+          const y = pad + (plotH / 4) * i;
+          ctx.beginPath();
+          ctx.moveTo(pad, y);
+          ctx.lineTo(w - pad, y);
+          ctx.stroke();
+
+          const x = pad + (plotW / 4) * i;
+          ctx.beginPath();
+          ctx.moveTo(x, pad);
+          ctx.lineTo(x, h - pad);
+          ctx.stroke();
+        }
+
+        const mapPoint = (inDb) => {
+          const norm = (inDb + 60) / 60;
+          return [pad + norm * plotW, h - pad - norm * plotH];
+        };
+
+        // Garis Referensi 1:1
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = 'rgba(241, 245, 249, 0.25)';
+        ctx.beginPath();
+        const [x0, y0] = mapPoint(-60);
+        const [x1, y1] = mapPoint(0);
+        ctx.moveTo(x0, y0);
+        ctx.lineTo(x1, y1);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Kurva Limiter Aktif
+        ctx.strokeStyle = '#00e5ff';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        for (let inDb = -60; inDb <= 0; inDb += 1) {
+          const outDb = inDb <= thresh ? inDb : thresh + (inDb - thresh) / ratio;
+          const [px, py] = [pad + ((inDb + 60) / 60) * plotW, h - pad - ((outDb + 60) / 60) * plotH];
+          if (inDb === -60) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+
+        // Titik Threshold
+        const [tx, ty] = mapPoint(thresh);
+        ctx.fillStyle = '#ffc94a';
+        ctx.beginPath();
+        ctx.arc(tx, ty, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#708499';
+        ctx.font = '8.5px monospace';
+        ctx.fillText('0dB', w - pad - 18, h - pad + 12);
+        ctx.fillText('-60dB', 6, h - pad + 12);
+      }, [thresh, ratio]);
+
+      const setLimiter = (t, r) => {
+        const nextT = [...dsp.limThresh];
+        const nextR = [...dsp.limRatio];
+        nextT[selectedCh] = t;
+        nextR[selectedCh] = r;
+        setDsp(p => ({ ...p, limThresh: nextT, limRatio: nextR }));
+
+        dspDriver.sendCommand(CMD.SET_LIMITER, [
+          selectedCh,
+          ...packInt16(t * 10),
+          ...packUint16(10), // Attack 10ms
+          ...packUint16(100), // Release 100ms
+          ...packInt16(r * 10)
+        ]);
+      };
+
+      return (
+        <div className="space-y-3">
+          <div className="grid grid-cols-4 gap-1.5 p-1 bg-panelBg border border-[#1e293b] rounded-xl">
+            {CHANNELS.map((ch, idx) => (
+              <button
+                key={ch}
+                onClick={() => setSelectedCh(idx)}
+                className={`py-2 rounded-lg text-xs font-black transition ${
+                  selectedCh === idx 
+                    ? 'bg-neonCyan text-slate-950 shadow-[0_0_10px_rgba(0,229,255,0.4)]' 
+                    : 'text-slate-400 bg-cardBg'
+                }`}
+              >
+                {ch}
+              </button>
+            ))}
+          </div>
+
+          <div className="bg-panelBg border border-[#1e293b] rounded-xl p-3 space-y-3">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xs font-black text-neonCyan tracking-wider flex items-center gap-1.5 m-0">
+                <Icons.Shield className="w-4 h-4" /> LIMITER / COMPRESSOR — {CHANNELS[selectedCh]}
+              </h2>
+              {ratio > 1.2 && (
+                <span className="text-[7.5px] font-black px-1.5 py-0.5 rounded bg-neonAmber/20 border border-neonAmber text-neonAmber shadow-[0_0_6px_#ffc94a]">
+                  LIMITER AKTIF
+                </span>
+              )}
+            </div>
+
+            {/* Grid Kurva Limiter + Bar Meter Gain Reduction */}
+            <div className="grid grid-cols-[1fr_48px] gap-2 p-2 bg-[#060910] border border-[#1e293b] rounded-lg">
+              <canvas ref={canvasRef} width="320" height="170" className="w-full h-auto block" />
+              <div className="flex flex-col items-center justify-between py-1 bg-[#0a0e16] border border-[#1c2738] rounded">
+                <span className="text-[7.5px] font-black text-neonAmber">GR (dB)</span>
+                <div className="w-3 flex-1 bg-[#04070c] border border-[#162233] rounded overflow-hidden flex flex-col justify-end p-0.5 my-1">
+                  <div 
+                    className="w-full bg-gradient-to-t from-amber-400 to-rose-500 rounded-sm transition-[height] duration-75"
+                    style={{ height: `${grPct}%` }}
+                  />
+                </div>
+                <span className="font-mono text-[8.5px] font-black text-rose-400">
+                  {grDb > 0 ? `-${grDb.toFixed(1)}` : '0.0'}
+                </span>
+              </div>
+            </div>
+
+            {/* Slider Threshold & Ratio */}
+
+            <div className="p-3 bg-cardBg rounded-xl border border-[#1c2738] space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-bold text-neonAmber">THRESHOLD</span>
+                <span className="font-mono text-neonAmber font-black">{thresh} dBFS</span>
+              </div>
+              <input 
+                type="range" 
+                min="-30" 
+                max="0" 
+                step="0.5" 
+                value={thresh} 
+                onChange={(e) => setLimiter(Number(e.target.value), ratio)} 
+                className="w-full accent-neonAmber" 
+              />
+            </div>
+
+            <div className="p-3 bg-cardBg rounded-xl border border-[#1c2738] space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-bold text-neonCyan">RATIO</span>
+                <span className="font-mono text-neonCyan font-black">{ratio >= 20 ? 'BRICKWALL (∞:1)' : `${ratio}:1`}</span>
+              </div>
+              <input 
+                type="range" 
+                min="1" 
+                max="20" 
+                step="0.5" 
+                value={ratio} 
+                onChange={(e) => setLimiter(thresh, Number(e.target.value))} 
+                className="w-full accent-neonCyan" 
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // 10. VIEW: 5 BANK PRESET EEPROM
+    // ==========================================
+    function PresetView({ dsp, setDsp, activeSlot, setActiveSlot, showToast }) {
+      const recallPreset = (slot) => {
+        setActiveSlot(slot);
+        dspDriver.sendCommand(CMD.LOAD_PRESET, [slot]);
+        showToast(`Memuat Bank Memori 0${slot + 1}`);
+      };
+
+      const storePreset = (slot) => {
+        dspDriver.sendCommand(CMD.SAVE_PRESET, [slot]);
+        showToast(`Disimpan ke Bank Memori 0${slot + 1}`);
+      };
+
+      return (
+        <div className="bg-panelBg border border-[#1e293b] rounded-xl p-4 space-y-3">
+          <div className="flex justify-between items-center mb-1">
+            <h2 className="text-xs font-black text-neonCyan tracking-wider flex items-center gap-1.5 m-0">
+              <Icons.Save className="w-4 h-4" /> 5 BANK PRESET EEPROM BOARD
+            </h2>
+            <span className="text-[9px] font-mono text-slate-400">5 SLOTS</span>
+          </div>
+
+          <div className="space-y-2">
+            {PRESETS_DEFAULT.map((preset, idx) => (
+              <div 
+                key={idx} 
+                className={`p-3 rounded-xl border transition flex items-center justify-between ${
+                  activeSlot === idx 
+                    ? 'bg-gradient-to-r from-[#172738] to-[#0e1724] border-neonCyan shadow-[0_0_10px_rgba(0,229,255,0.25)]' 
+                    : 'bg-cardBg border-[#1c2738]'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xs font-mono font-bold text-neonCyan px-2 py-1 bg-[#141b27] rounded border border-slate-700">
+                    0{idx + 1}
+                  </span>
+                  <div>
+                    <span className="text-xs font-bold text-slate-100 block">{preset.name}</span>
+                    <span className="text-[9px] text-slate-400">{preset.desc}</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => recallPreset(idx)} 
+                    className="px-3 py-1.5 bg-[#141b27] border border-slate-700 rounded-lg text-xs font-bold text-neonCyan active:scale-95"
+                  >
+                    RECALL
+                  </button>
+                  <button 
+                    onClick={() => storePreset(idx)} 
+                    className="px-3 py-1.5 bg-neonCyan text-slate-950 rounded-lg text-xs font-black active:scale-95"
+                  >
+                    STORE
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // 11. MODAL KONEKSI HARDWARE
+    // ==========================================
+    function ConnectionModal({ isOpen, onClose, connState, dspDriver, showToast }) {
+      const [pin, setPin] = useState('123456');
+      const [ip, setIp] = useState('192.168.4.1');
+      const [loading, setLoading] = useState(false);
+
+      if (!isOpen) return null;
+
+      const connectBle = async () => {
+        setLoading(true);
+        try {
+          await dspDriver.connectBle(pin);
+          showToast("Terhubung ke ESP32 via Bluetooth!");
+          onClose();
+        } catch(e) {
+          showToast(e.message || "Gagal menyambung Bluetooth");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const connectSerial = async () => {
+        setLoading(true);
+        try {
+          await dspDriver.connectSerial();
+          showToast("Terhubung via USB OTG Serial!");
+          onClose();
+        } catch(e) {
+          showToast(e.message || "Gagal membuka USB Serial");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const connectWifi = async () => {
+        setLoading(true);
+        try {
+          await dspDriver.connectWifi(ip);
+          showToast(`Terhubung via WiFi @ ${ip}!`);
+          onClose();
+        } catch(e) {
+          showToast(e.message || "Gagal menyambung WiFi");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm bg-panelBg border border-neonCyan/50 rounded-xl p-5 shadow-2xl space-y-4">
+            <div className="flex justify-between items-center pb-2 border-b border-[#1e293b]">
+              <div className="flex items-center gap-2">
+                <Icons.Bluetooth className="w-5 h-5 text-neonCyan" />
+                <h3 className="text-xs font-black text-neonCyan tracking-wider m-0">KONEKSI PERANGKAT ESP32-S3</h3>
+              </div>
+              <button onClick={onClose} className="text-slate-400 hover:text-white">
+                <Icons.Close className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-2.5 bg-cardBg border border-[#1c2738] rounded-lg flex justify-between items-center text-xs">
+              <div>
+                <span className="text-[10px] text-slate-400 block font-bold">STATUS PERANGKAT:</span>
+                <span className="font-mono font-bold text-slate-200">
+                  {connState.connected ? `${connState.name} (ONLINE)` : 'OFFLINE / TERPUTUS'}
+                </span>
+              </div>
+              {connState.connected && (
+                <button 
+                  onClick={() => { dspDriver.disconnect(); onClose(); }}
+                  className="px-2.5 py-1 bg-rose-500/20 text-rose-400 border border-rose-500/50 rounded-lg text-[10px] font-bold"
+                >
+                  PUTUSKAN
+                </button>
+              )}
+            </div>
+
+            <div>
+              <label className="text-[10px] text-slate-400 block font-bold mb-1">PIN KEAMANAN BLUETOOTH (6 ANGKA):</label>
+              <input 
+                type="password" 
+                maxLength="6"
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                className="w-full p-2 bg-cardBg border border-[#1e293b] rounded-lg text-center font-mono text-neonAmber tracking-[0.3em] font-bold text-sm"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <button
+                onClick={connectBle}
+                disabled={loading}
+                className="w-full py-2.5 bg-neonCyan text-slate-950 font-black text-xs rounded-lg flex items-center justify-center gap-2 active:scale-95 transition"
+              >
+                <Icons.Bluetooth className="w-4 h-4" /> KONEKSI BLUETOOTH BLE
+              </button>
+
+              <button
+                onClick={connectSerial}
+                disabled={loading}
+                className="w-full py-2.5 bg-[#141b27] border border-neonAmber text-neonAmber font-black text-xs rounded-lg flex items-center justify-center gap-2 active:scale-95 transition"
+              >
+                <Icons.Usb className="w-4 h-4" /> KONEKSI USB OTG SERIAL (115200)
+              </button>
+
+              <div className="flex gap-2 pt-1">
+                <input 
+                  type="text" 
+                  value={ip}
+                  onChange={(e) => setIp(e.target.value)}
+                  placeholder="192.168.4.1"
+                  className="flex-1 p-2 bg-[#141b27] border border-slate-700 rounded-lg font-mono text-xs text-neonGreen font-bold"
+                />
+                <button
+                  onClick={connectWifi}
+                  disabled={loading}
+                  className="px-4 py-2 bg-neonGreen text-slate-950 font-black text-xs rounded-lg active:scale-95"
+                >
+                  WIFI
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Mount Aplikasi ke DOM
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
