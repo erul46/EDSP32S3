@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wiring & Hardware Guide - ELKASARI DSP S3</title>
+<style>
+  :root {
+    --bg: #0b0f17;
+    --panel: #111827;
+    --card: #141f32;
+    --border: #1e2d42;
+    --cyan: #00e5ff;
+    --mint: #3ee89a;
+    --amber: #ffc94a;
+    --red: #ff3366;
+    --text: #f1f5f9;
+    --textdim: #94a3b8;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 20px;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+  }
+
+  .container { max-width: 900px; margin: 0 auto; }
+  header {
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 20px; margin-bottom: 24px;
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+  }
+  .title-group h1 { margin: 0; font-size: 24px; color: var(--cyan); letter-spacing: 1px; }
+  .title-group p { margin: 4px 0 0; color: var(--textdim); font-size: 13px; font-family: var(--mono); }
+  .badge-tag { background: rgba(0,229,255,0.15); border: 1px solid var(--cyan); color: var(--cyan); font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 700; font-family: var(--mono); }
+
+  h2 { font-size: 16px; color: var(--mint); letter-spacing: 0.5px; border-left: 3px solid var(--mint); padding-left: 10px; margin: 28px 0 14px; text-transform: uppercase; }
+  h3 { font-size: 14px; color: var(--amber); margin: 16px 0 8px; }
+
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+  p, li { font-size: 13px; color: #cbd5e1; }
+  ul, ol { padding-left: 20px; margin: 6px 0; }
+  li { margin-bottom: 4px; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; margin: 10px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; font-family: var(--mono); text-align: left; }
+  th { background: #162234; color: var(--cyan); padding: 9px 12px; border: 1px solid var(--border); }
+  td { padding: 8px 12px; border: 1px solid var(--border); background: var(--card); }
+  tr:nth-child(even) td { background: #0f1725; }
+
+  .pin-badge { font-weight: 900; color: var(--amber); background: rgba(255,201,74,0.15); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(255,201,74,0.3); }
+  .fn-badge { color: var(--mint); font-weight: bold; }
+
+  /* DIAGRAM BOX */
+  .diagram-box {
+    background: #060a10; border: 1px dashed var(--cyan); border-radius: 8px;
+    padding: 14px; font-family: var(--mono); font-size: 11px; color: #a5f3fc;
+    line-height: 1.45; overflow-x: auto; white-space: pre; margin: 12px 0;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 680px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .note-warn {
+    background: rgba(255, 51, 102, 0.1); border-left: 4px solid var(--red);
+    padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 12px 0;
+  }
+  .note-tip {
+    background: rgba(62, 232, 154, 0.1); border-left: 4px solid var(--mint);
+    padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 12px 0;
+  }
+  .note-warn p, .note-tip p { margin: 0; font-size: 12px; }
+  
+  .btn-print {
+    background: linear-gradient(180deg, #1e2d42 0%, #0d1522 100%);
+    border: 1px solid var(--cyan); color: var(--cyan); padding: 6px 12px;
+    border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer;
+  }
+  .btn-print:hover { background: var(--cyan); color: #000; }
+
+  @media print {
+    body { background: #fff; color: #000; padding: 0; }
+    .card { border: 1px solid #ccc; box-shadow: none; background: #fff; }
+    td, th { background: #fff !important; color: #000 !important; border: 1px solid #999; }
+    .btn-print { display: none; }
+    .diagram-box { background: #f5f5f5; color: #000; border-color: #000; }
+  }
+      /* Styling khusus galeri foto 1:1 */
+    .photo-grid-1to1 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 12px;
+    }
+    .photo-box-card {
+      background: #0d1522;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.25s ease;
+    }
+    .photo-box-card:hover {
+      border-color: var(--cyan);
+      box-shadow: 0 0 14px rgba(0, 229, 255, 0.25);
+      transform: translateY(-2px);
+    }
+    .img-wrap-1to1 {
+      width: 100%;
+      aspect-ratio: 1 / 1; /* MENGUNCI UKURAN KOTAK PERSEGI 1:1 */
+      border-radius: 6px;
+      overflow: hidden;
+      background: #060910;
+      border: 1px dashed rgba(0, 229, 255, 0.3);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .img-wrap-1to1 img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover; /* Foto otomatis pas memenuhi kotak tanpa gepeng */
+      display: block;
+      transition: transform 0.3s ease;
+    }
+    .img-wrap-1to1:hover img {
+      transform: scale(1.05); /* Efek zoom halus saat disentuh */
+    }
+    .photo-caption {
+      margin-top: 10px;
+      font-size: 11.5px;
+      color: var(--cyan);
+      font-weight: 800;
+      font-family: var(--mono);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .photo-desc {
+      font-size: 11px;
+      color: var(--textdim);
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="title-group">
+      <h1>ELKASARI DSP S3 &middot; DLMS 2-IN 4-OUT</h1>
+      <p>PANDUAN LENGKAP WIRING, SKEMATIK PIN &amp; SPESIFIKASI HARDWARE</p>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span class="badge-tag">FIRMWARE 10.10.26 PRO</span>
+      <button class="btn-print" onclick="window.print()">081318574216</button>
+    </div>
+  </header>
+
+  <!-- 1. SPESIFIKASI & ARSITEKTUR SISTEM -->
+  <h2>1. Arsitektur &amp; Spesifikasi Sistem</h2>
+  <div class="card">
+    <p>Perangkat ini adalah unit <b>Digital Loudspeaker Management System (DLMS)</b> berbasis ESP32-S3 yang bekerja pada resolusi audio <b>24-Bit / 48.000 Hz Full-Duplex</b> secara *real-time*.</p>
+    <div class="grid-2">
+      <div>
+        <h3>Pemrosesan Audio (Core 0)</h3>
+        <ul>
+          <li><b>Input Jalur:</b> 2 Channel (Input A &amp; Input B) via ADC PCM1808.</li>
+          <li><b>Output Jalur:</b> 4 Channel via Dual DAC PCM5102A:
+            <br>&bull; <b>OUT 1 &amp; OUT 2:</b> Satelit High/Mid (DAC Utama).
+            <br>&bull; <b>OUT 3 &amp; OUT 4:</b> Subwoofer Bass/Low (DAC Kedua).
+          </li>
+          <li><b>Algoritma DSP:</b> 9-Band PEQ (Simper TPT SVF + TDF2), Crossover Linkwitz-Riley/Butterworth 6-48dB, Subsonic Subwoofer, Matrix Routing riil, Subharmonic Glerr Synthesizer, Brickwall Limiter, dan Time Alignment Delay (hingga 8.0 ms).</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Kendali Antarmuka (Core 1)</h3>
+        <ul>
+          <li><b>Layar Fisik:</b> OLED 0.96" SSD1306 (I2C 400kHz) menampilkan 32-Band RTA Spektrum &amp; Menu Navigasi.</li>
+          <li><b>Kontrol Fisik:</b> Rotary Encoder KY-040 + Tombol MUTE Cepat &amp; Tombol BACK Cepat.</li>
+          <li><b>Kontrol Nirkabel:</b> Web Bluetooth Low Energy (BLE) Dashboard responsif tanpa aplikasi tambahan.</li>
+          <li><b>Penyimpanan:</b> NVS Flash Internal (Autosave state &amp; 5 Slot Bank Preset).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. DAFTAR KOMPONEN HARDWARE (BOM) -->
+  <h2>2. Daftar Modul Komponen yang Digunakan</h2>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Komponen / Modul</th>
+            <th>Tipe / Varian</th>
+            <th>Fungsi Utama dalam Sistem</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Mikrokontroler Utama</b></td>
+            <td>ESP32-S3 DevKit-C (N8R8 / N16R8)</td>
+            <td>Dual-Core Xtensa LX7 @ 240MHz. Pemroses DSP audio &amp; BLE Web Server.</td>
+          </tr>
+          <tr>
+            <td><b>Modul ADC (Input)</b></td>
+            <td>PCM1808 (CJMCU-1808)</td>
+            <td>Konversi sinyal analog (Mixer/Line IN L-R) menjadi data digital I2S 24-Bit.</td>
+          </tr>
+          <tr>
+            <td><b>Modul DAC 1 (Output High)</b></td>
+            <td>PCM5102A Kuning / Ungu</td>
+            <td>Output OUT 1 (High L) dan OUT 2 (High R) ke Amplifier Satelit.</td>
+          </tr>
+          <tr>
+            <td><b>Modul DAC 2 (Output Sub)</b></td>
+            <td>PCM5102A Kuning / Ungu</td>
+            <td>Output OUT 3 (Sub L) dan OUT 4 (Sub R) ke Amplifier Subwoofer.</td>
+          </tr>
+          <tr>
+            <td><b>Layar Tampilan</b></td>
+            <td>OLED 0.96" SSD1306 (128x64)</td>
+            <td>Layar monokrom I2C untuk spektrum RTA &amp; navigasi menu DLMS.</td>
+          </tr>
+          <tr>
+            <td><b>Knob Rotary Encoder</b></td>
+            <td>KY-040 Rotary Encoder Module</td>
+            <td>Navigasi menu, scroll nilai frekuensi/gain, dan klik tombol enter/OK.</td>
+          </tr>
+          <tr>
+            <td><b>Tombol Tambahan 1</b></td>
+            <td>Tactile Push Button 6x6 mm</td>
+            <td>Tombol <b>MUTE Cepat</b> (Mute master instan).</td>
+          </tr>
+          <tr>
+            <td><b>Tombol Tambahan 2</b></td>
+            <td>Tactile Push Button 6x6 mm</td>
+            <td>Tombol <b>BACK Cepat</b> (Kembali ke menu sebelumnya / ke Home).</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 3. TABEL WIRING PINOUT LENGKAP -->
+  <h2>3. Tabel Pinout Lengkap GPIO ESP32-S3</h2>
+  <div class="card">
+    <p>Hubungkan modul-modul hardware ke pin GPIO ESP32-S3 sesuai dengan tabel resmi firmware di bawah ini:</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>GPIO ESP32-S3</th>
+            <th>Fungsi Sinyal</th>
+            <th>Tersambung ke Pin Modul</th>
+            <th>Keterangan Penting</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- AUDIO I2S SHARED CLOCK -->
+          <tr>
+            <td><span class="pin-badge">GPIO 46</span></td>
+            <td><span class="fn-badge">I2S BCK</span> (Bit Clock)</td>
+            <td>BCK pada <b>PCM1808</b> &amp; <b>Kedua DAC PCM5102A</b></td>
+            <td>Shared Clock (1 jalur dicabang ke 3 modul).</td>
+          </tr>
+          <tr>
+            <td><span class="pin-badge">GPIO 9</span></td>
+            <td><span class="fn-badge">I2S WS</span> (Word Select/LRCK)</td>
+            <td>LRCK/WS pada <b>PCM1808</b> &amp; <b>Kedua DAC PCM5102A</b></td>
+            <td>Shared Clock (Frekuensi sampling 48.000 Hz).</td>
+          </tr>
+          <tr>
+            <td><span class="pin-badge">GPIO 18</span></td>
+            <td><span class="fn-badge">I2S MCLK</span> (Master Clock)</td>
+            <td>SCKI / MCLK pada <b>PCM1808 ADC</b></td>
+            <td>Wajib untuk ADC (256 x 48 kHz = 12.288 MHz).</td>
+          </tr>
+          <tr>
+            <td><span class="pin-badge">GPIO 14</span></td>
+            <td><span class="fn-badge">I2S DIN</span> (Data IN)</td>
+            <td>DOUT pada <b>PCM1808 ADC</b></td>
+            <td>Jalur data rekaman audio analog dari Mixer.</td>
+          </tr>
+          <tr>
+            <td><span class="pin-badge">GPIO 17</span></td>
+            <td><span class="fn-badge">I2S DOUT 1</span> (Data OUT High)</td>
+            <td>DIN pada <b>DAC PCM5102A Pertama</b></td>
+            <td>Jalur output audio satelit OUT 1 &amp; OUT 2.</td>
+          </tr>
+          <tr>
+            <td><span class="pin-badge">GPIO 15</span></td>
+            <td><span class="fn-badge">I2S DOUT 2</span> (Data OUT Sub)</td>
+            <td>DIN pada <b>DAC PCM5102A Kedua</b></td>
+            <td>Jalur output audio subwoofer OUT 3 &amp; OUT 4.</td>
+          </tr>
+
+          <!-- OLED I2C -->
+          <tr>
+            <td><span class="pin-badge">GPIO 8</span></td>
+            <td><span class="fn-badge">I2C SDA</span></td>
+            <td>SDA pada <b>Layar OLED SSD1306</b></td>
+            <td>Komunikasi grafis layar (Pull-up internal aktif).</td>
+          </tr>
+          <tr>
+            <td><span class="pin-badge">GPIO 4</span></td>
+            <td><span class="fn-badge">I2C SCL</span></td>
+            <td>SCL pada <b>Layar OLED SSD1306</b></td>
+            <td>Clock komunikasi I2C (Speed: 400 kHz).</td>
+          </tr>
+
+          <!-- ENCODER KY-040 -->
+          <tr>
+            <td><span class="pin-badge">GPIO 5</span></td>
+            <td><span class="fn-badge">ENC CLK</span></td>
+            <td>CLK pada <b>Rotary Encoder KY-040</b></td>
+            <td>Phase A quadrature encoder (Input Pull-up).</td>
+          </tr>
+          <tr>
+            <td><span class="pin-badge">GPIO 6</span></td>
+            <td><span class="fn-badge">ENC DT</span></td>
+            <td>DT pada <b>Rotary Encoder KY-040</b></td>
+            <td>Phase B quadrature encoder (Input Pull-up).</td>
+          </tr>
+          <tr>
+            <td><span class="pin-badge">GPIO 7</span></td>
+            <td><span class="fn-badge">ENC SW</span></td>
+            <td>SW pada <b>Rotary Encoder KY-040</b></td>
+            <td>Tombol klik tengah knob (Pilih / Enter).</td>
+          </tr>
+
+          <!-- EXTRA TACTILE BUTTONS -->
+          <tr>
+            <td><span class="pin-badge">GPIO 1</span></td>
+            <td><span class="fn-badge">BTN BACK</span></td>
+            <td>Kaki 1 <b>Tombol Tactile BACK</b></td>
+            <td>Kaki 2 disambung ke GND. Input Pull-up aktif.</td>
+          </tr>
+          <tr>
+            <td><span class="pin-badge">GPIO 2</span></td>
+            <td><span class="fn-badge">BTN MUTE</span></td>
+            <td>Kaki 1 <b>Tombol Tactile MUTE</b></td>
+            <td>Kaki 2 disambung ke GND. Input Pull-up aktif.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 4. DIAGRAM KONEKSI VISUAL (ASCII ART) -->
+  <h2>4. Skema Hubungan Kabel (Visual Diagram)</h2>
+  <div class="card">
+    <div class="diagram-box">
+                                     +-----------------------+
+                                     |  ESP32-S3 DEVKIT-C    |
+                                     +-----------------------+
+                                       |   |   |   |   |   |
+     [SHARED I2S CLOCK]                |   |   |   |   |   |
+     GPIO 46 (BCK) --------------------+---+---+   |   |   |
+     GPIO  9 (WS)  --------------------+---+---+   |   |   |
+                                       |   |   |   |   |   |
+     [PCM1808 ADC (INPUT STEREO)]      |   |   |   |   |   |
+     GPIO 18 (MCLK) -----------------> SCKI|   |   |   |   |
+     GPIO 14 (DIN)  <----------------- DOUT|   |   |   |   |
+                                           |   |   |   |   |
+     [PCM5102A #1 (OUT 1&2 HIGH)]          |   |   |   |   |
+     GPIO 17 (DOUT1) ---------------------> DIN|   |   |   |
+                                               |   |   |   |
+     [PCM5102A #2 (OUT 3&4 SUB)]               |   |   |   |
+     GPIO 15 (DOUT2) -------------------------> DIN|   |   |
+                                                   |   |   |
+     [OLED 0.96" SSD1306]                          |   |   |
+     GPIO  8 (SDA) <-----------------------------> SDA |   |
+     GPIO  4 (SCL) ------------------------------> SCL |   |
+                                                       |   |
+     [ROTARY ENCODER KY-040]                           |   |
+     GPIO  5 (CLK) <------------------------------ CLK |   |
+     GPIO  6 (DT)  <------------------------------ DT  |   |
+     GPIO  7 (SW)  <------------------------------ SW  |   |
+                                                           |
+     [TOMBOL FISIK MANDIRI (PULL-UP KE GND)]               |
+     GPIO  1 (BACK) <---------[ TACTILE BTN 1 ]------------+---> GND
+     GPIO  2 (MUTE) <---------[ TACTILE BTN 2 ]------------+---> GND
+    </div>
+  </div>
+
+  <!-- 5. KONFIGURASI JUMPER MODUL ADC & DAC -->
+  <h2>5. Konfigurasi Jumper Modul (Wajib Disetel!)</h2>
+  <div class="card">
+    <h3>A. Konfigurasi Modul ADC PCM1808 (Format I2S Slave 24-Bit)</h3>
+    <p>Agar modul PCM1808 bekerja dengan clock dari ESP32, solder/hubungkan jumper di board PCB PCM1808 sebagai berikut:</p>
+    <ul>
+      <li><b>FMT0 ke GND &amp; FMT1 ke GND:</b> Mengatur format output data menjadi <b>I2S Standard 24-Bit</b>.</li>
+      <li><b>MD0 ke GND &amp; MD1 ke GND:</b> Mengatur PCM1808 sebagai <b>Slave Mode</b> (menerima detak clock BCK, WS, dan MCLK dari ESP32-S3).</li>
+    </ul>
+
+    <h3>B. Konfigurasi Modul DAC PCM5102A (Kedua Modul)</h3>
+    <p>Pada bagian belakang modul DAC PCM5102A kuning/ungu, atur jumper solder pada posisi berikut:</p>
+    <ul>
+      <li><b>SCK ke GND:</b> Modul akan membangkitkan internal PLL sendiri dari pin BCK (sehingga DAC PCM5102A tidak membutuhkan kabel MCLK tambahan).</li>
+      <li><b>FLT ke GND:</b> Memilih filter digital <i>Low Latency / FIR</i>.</li>
+      <li><b>DEMP ke GND:</b> Mematikan fungsi <i>De-emphasis</i>.</li>
+      <li><b>XSMT ke 3.3V (VCC):</b> Posisi High (Unmute) agar audio bersuara.</li>
+    </ul>
+
+    <div class="note-warn">
+      <p><b>PERHATIAN CLOCK JITTER:</b> Hubungkan kabel <b>GPIO 18 (MCLK)</b> ke pin SCKI pada PCM1808 dengan kabel sependek mungkin (&lt; 10 cm) untuk menghindari noise atau distorsi clock frekuensi tinggi 12.288 MHz.</p>
+    </div>
+  </div>
+
+  <!-- 6. FUNGSI NAVIGASI TOMBOL & KNOB -->
+  <h2>6. Cara Mengoperasikan Kontrol Fisik</h2>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Kontrol Fisik</th>
+            <th>Aksi Pengguna</th>
+            <th>Fungsi yang Dieksekusi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td rowspan="4"><b>Knob Rotary Encoder</b></td>
+            <td>Diputar di Layar HOME</td>
+            <td>Mengatur <b>Volume Master Audio</b> secara langsung (-60 dB s/d +6 dB).</td>
+          </tr>
+          <tr>
+            <td>Diputar di dalam Menu</td>
+            <td>Memilih item menu ke atas/bawah, atau menaikkan/menurunkan angka parameter.</td>
+          </tr>
+          <tr>
+            <td>Klik Singkat (Tekan Knob)</td>
+            <td>Tombol <b>ENTER / PILIH / SIMPAN</b> nilai yang sedang diedit.</td>
+          </tr>
+          <tr>
+            <td>Tahan 1 Detik (Long Press)</td>
+            <td>Fungsi <b>KEMBALI (BACK)</b> mundur ke menu sebelumnya.</td>
+          </tr>
+          <tr>
+            <td><b>Tombol Tambahan 1 (GPIO 1)</b></td>
+            <td>Tekan Sekali</td>
+            <td>Tombol <b>BACK Cepat</b>. Langsung mundur 1 tingkat menu tanpa perlu menahan knob.</td>
+          </tr>
+          <tr>
+            <td><b>Tombol Tambahan 2 (GPIO 2)</b></td>
+            <td>Tekan Sekali</td>
+            <td>Tombol <b>MUTE Master Instan</b>. Mematikan/menghidupkan seluruh suara panggung seketika.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 7. PANDUAN POWER SUPPLY ANTI-DENGUNG -->
+  <h2>7. Rekomendasi Catu Daya (Anti-Noise &amp; Anti-Ground Loop)</h2>
+  <div class="card">
+    <div class="note-tip">
+      <p><b>Kunci Kualitas Suara Hening (Zero Hiss &amp; Hum):</b> Sinyal audio digital berkecepatan tinggi sangat sensitif terhadap gangguan riak tegangan (*ripple*) dari adaptor switching (SMPS) berkualitas rendah.</p>
+    </div>
+    <ul>
+      <li><b>Gunakan Regulator Tegangan Terpisah:</b>
+        <br>&bull; Berikan suplai <b>5V bersih</b> ke pin VIN ESP32-S3.
+        <br>&bull; Sangat direkomendasikan memberi daya modul analog ADC PCM1808 dan DAC PCM5102A melalui IC regulator linear low-noise (seperti <b>LM7805 / AMS1117-3.3V</b> yang terpisah dari jalur digital modul relay/layar).
+      </li>
+      <li><b>Grounded Star Point (Titik Bintang):</b>
+        <br>Satukan semua jalur kabel GND (Ground) analog dari soket RCA/XLR ke satu titik pusat sasis box besi untuk mencegah timbulnya putaran ground (*ground loop* / dengung 50 Hz).
+      </li>
+      <li><b>Kapasitor Filter:</b> Pasang kapasitor keramik <b>100nF (104)</b> paralel dengan Elco <b>100uF</b> di dekat pin VCC dan GND modul ADC/DAC sebagai penyaring desis digital.</li>
+    </ul>
+  </div>
+  <h2>8. Galeri Foto Modul Modifikasi</h2>
+  <div class="card">
+    <p style="margin-top:0;">Dokumentasi visual hasil modifikasi solder jumper, jalur kabel *shared clock*, dan tata letak modul fisik:</p>
+    
+    <div class="photo-grid-1to1">
+
+      <!-- FOTO 1: MODUL ADC PCM1808 -->
+      <div class="photo-box-card">
+        <div class="img-wrap-1to1">
+          <!-- Ganti 'foto_modul_pcm1808.jpg' dengan nama file foto Anda -->
+          <img src="PCM1808.png" alt="Modifikasi Jumper PCM1808" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100%25\' height=\'100%25\' viewBox=\'0 0 200 200\'%3E%3Crect fill=\'%23070b12\' width=\'200\' height=\'200\'/%3E%3Ctext fill=\'%2300e5ff\' font-family=\'monospace\' font-size=\'11\' font-weight=\'bold\' x=\'50%25\' y=\'45%25\' text-anchor=\'middle\'%3E%5B FOTO 1:1 %5D%3C/text%3E%3Ctext fill=\'%2364748b\' font-family=\'monospace\' font-size=\'9\' x=\'50%25\' y=\'60%25\' text-anchor=\'middle\'%3Efoto_modul_pcm1808.jpg%3C/text%3E%3C/svg%3E';">
+        </div>
+        <div class="photo-caption">1. Modul ADC PCM1808</div>
+        <div class="photo-desc">Modifikasi jumper solder FMT0/FMT1 ke GND (I2S 24-bit) &amp; MD0/MD1 ke GND (Slave Mode), NB: Jika mengalami suara yg jelek/tenggelam lepas (kapasitor filter),membutuhkan 2 sumber daya 3.3v dan 5v.</div>
+      </div>
+
+      <!-- FOTO 2: MODUL DAC PCM5102A (HIGH & SUB) -->
+      <div class="photo-box-card">
+        <div class="img-wrap-1to1">
+          <!-- Ganti 'foto_modul_pcm5102a.jpg' dengan nama file foto Anda -->
+          <img src="PCM5102A.png" alt="Modifikasi Jumper PCM5102A" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100%25\' height=\'100%25\' viewBox=\'0 0 200 200\'%3E%3Crect fill=\'%23070b12\' width=\'200\' height=\'200\'/%3E%3Ctext fill=\'%2300e5ff\' font-family=\'monospace\' font-size=\'11\' font-weight=\'bold\' x=\'50%25\' y=\'45%25\' text-anchor=\'middle\'%3E%5B FOTO 1:1 %5D%3C/text%3E%3Ctext fill=\'%2364748b\' font-family=\'monospace\' font-size=\'9\' x=\'50%25\' y=\'60%25\' text-anchor=\'middle\'%3Efoto_modul_pcm5102a.jpg%3C/text%3E%3C/svg%3E';">
+        </div>
+        <div class="photo-caption">2. Dual DAC PCM5102A</div>
+        <div class="photo-desc">Jumper solder belakang: SCK ke GND (Internal PLL aktif), FLT/DEMP ke GND, XSMT ke 3.3V.</div>
+      </div>
+
+      <!-- FOTO 3: WIRING ESP32-S3 & CLOCK SHARING -->
+      <div class="photo-box-card">
+        <div class="img-wrap-1to1">
+          <!-- Ganti 'foto_wiring_esp32.jpg' dengan nama file foto Anda -->
+          <img src="ESP32S3_16_8.png" alt="Wiring ESP32-S3" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100%25\' height=\'100%25\' viewBox=\'0 0 200 200\'%3E%3Crect fill=\'%23070b12\' width=\'200\' height=\'200\'/%3E%3Ctext fill=\'%2300e5ff\' font-family=\'monospace\' font-size=\'11\' font-weight=\'bold\' x=\'50%25\' y=\'45%25\' text-anchor=\'middle\'%3E%5B FOTO 1:1 %5D%3C/text%3E%3Ctext fill=\'%2364748b\' font-family=\'monospace\' font-size=\'9\' x=\'50%25\' y=\'60%25\' text-anchor=\'middle\'%3Efoto_wiring_esp32.jpg%3C/text%3E%3C/svg%3E';">
+        </div>
+        <div class="photo-caption">3. ESP32-S3 &amp; Bus Clock</div>
+        <div class="photo-desc">Titik percabangan kabel I2S (GPIO 46 BCK &amp; GPIO 9 WS) serta jalur pendek MCLK GPIO 18.</div>
+      </div>
+
+      <!-- FOTO 4: TAMPILAN AKHIR DALAM BOX SASIS -->
+      <div class="photo-box-card">
+        <div class="img-wrap-1to1">
+          <!-- Ganti 'foto_rakitan_box.jpg' dengan nama file foto Anda -->
+          <img src="prototipe_elkasari_DSP_s3.png" alt="Rakitan Final Box" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100%25\' height=\'100%25\' viewBox=\'0 0 200 200\'%3E%3Crect fill=\'%23070b12\' width=\'200\' height=\'200\'/%3E%3Ctext fill=\'%2300e5ff\' font-family=\'monospace\' font-size=\'11\' font-weight=\'bold\' x=\'50%25\' y=\'45%25\' text-anchor=\'middle\'%3E%5B FOTO 1:1 %5D%3C/text%3E%3Ctext fill=\'%2364748b\' font-family=\'monospace\' font-size=\'9\' x=\'50%25\' y=\'60%25\' text-anchor=\'middle\'%3Efoto_rakitan_box.jpg%3C/text%3E%3C/svg%3E';">
+        </div>
+        <div class="photo-caption">4. Layout Rakitan Sasis Box</div>
+        <div class="photo-desc">Tata letak power supply linear terpisah, posisi ground star point anti-dengung, dan panel depan.</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1248,50 +1248,32 @@ function onStatusNotify(e){
 function refreshStatusSoon(){ setTimeout(()=>{ if(connected && authed) sendCmd(CMD.GET_ALL_STATUS, []); }, 500); }
 
 let meterVals = new Array(6).fill(0);
+/* ============================================================
+   PENERIMA DATA REAL FFT & METER DARI ESP32-S3 (TANPA MANIPULASI)
+   ============================================================ */
 function onRtaNotify(e){
   const dv = e.target.value;
-  for(let i=0;i<dv.byteLength && i<6;i++) meterVals[i] = dv.getUint8(i);
+  if (!dv) return;
+
+  // 1. Ambil 6 Level Meter Puncak Riil
+  for(let i = 0; i < 6 && i < dv.byteLength; i++){
+    meterVals[i] = dv.getUint8(i);
+  }
   updateMiniBars();
 
-  if (dv.byteLength >= 33) {
-    for (let i = 0; i < 33; i++) {
-      rtaPreTarget[i] = (dv.getUint8(i) / 255) * 60 - 60;
+  // 2. Ambil 32-Band Real FFT Langsung dari DSP ESP32
+  if (dv.byteLength >= 38) {
+    for (let i = 0; i < 32; i++) {
+      const byteVal = dv.getUint8(6 + i);
+      // Skala mentah asli dari ESP32 (-60 dB s/d 0 dB)
+      rtaPreTarget[i] = (byteVal / 255.0) * 60.0 - 60.0;
     }
-  } else {
-    const inLevel = Math.max(meterVals[0], meterVals[1]);
-    const baseDb = (inLevel / 255) * 55 - 55;
-    for (let i = 0; i < NUM_BANDS; i++) {
-      const rolloff = (i / NUM_BANDS) * 8;
-      const jitter = (Math.sin(Date.now() / 80 + i) * 3);
-      rtaPreTarget[i] = (inLevel < 4) ? -60 : Math.max(-60, baseDb - rolloff + jitter);
-    }
+    // Band ke-33 (20kHz) mengikuti band 32
+    rtaPreTarget[32] = rtaPreTarget[31];
   }
 
-  if(currentTab==='comp') updateGrMeter();
+  if(currentTab === 'comp') updateGrMeter();
 }
-
-// Offline simulation generator
-let simPhase = 0;
-setInterval(() => {
-  if (connected) return;
-  simPhase += 0.08;
-  const inA = Math.floor(130 + Math.sin(simPhase)*60 + Math.random()*20);
-  const inB = Math.floor(125 + Math.cos(simPhase*1.1)*60 + Math.random()*20);
-  meterVals[0] = inA; meterVals[1] = inB;
-  meterVals[2] = Math.floor(inA*0.9);
-  meterVals[3] = Math.floor(inB*0.9);
-  meterVals[4] = Math.floor(Math.max(10, (inA+inB)*0.5 + Math.sin(simPhase*2)*35));
-  meterVals[5] = Math.floor(Math.max(10, (inA+inB)*0.5 + Math.cos(simPhase*2)*35));
-  updateMiniBars();
-
-  const baseDb = (inA / 255) * 52 - 52;
-  for (let i = 0; i < NUM_BANDS; i++) {
-    const roll = (i / NUM_BANDS) * 6;
-    const wave = Math.sin(simPhase * 1.8 + i * 0.35) * 4.5;
-    rtaPreTarget[i] = Math.max(-60, Math.min(4, baseDb - roll + wave));
-  }
-  if(currentTab==='comp') updateGrMeter();
-}, 70);
 
 // RTA Ballistics Animation Loop
 function rtaAnimationLoop() {
@@ -1698,7 +1680,7 @@ function drawXoverGraph() {
 }
 
 /* ============================================================
-   CROSSOVER CONTROLS WITH SUBHARMONIC SYNTHESIZER (GLERR)
+   CROSSOVER CONTROLS WITH DIRECT SWITCH & STEPPING BUTTONS
    ============================================================ */
 function renderXover(){
   const win = document.getElementById('content-xover');
@@ -1706,49 +1688,55 @@ function renderXover(){
   const hpf = state.xoverHpf[activeCh];
   const lpf = state.xoverLpf[activeCh];
   const gain = state.gain[activeCh];
-  const isMuted = state.mute[activeCh + 2];
+  const isMuted = state.mute[activeCh+2];
 
   win.innerHTML = `
-    <!-- PILIHAN CHANNEL OUTPUT & TOMBOL MUTE -->
+    <!-- SELECTOR CHANNEL LAMA TETAP ADA (UNTUK OPSI DETAIL L/R) -->
     <div class="panel">${chSelector(4)}
       <div class="toggle ${isMuted ? 'mute-on' : ''}" id="stripMuteBtn" style="text-align:center;">
         ${isMuted ? 'MUTED' : 'MUTE ' + OUT_SHORT_NAMES[activeCh]}
       </div>
     </div>
-    <!-- PANEL SUBHARMONIC SYNTHESIZER (HANYA MUNCUL DI SUBWOOFER OUT 3 & 4) -->
+        <!-- PANEL KHUSUS SUBHARMONIC SYNTHESIZER (HANYA AKTIF SAAT SUBWOOFER) -->
     ${isSub ? `
     <div class="panel" style="border-color: rgba(255, 201, 74, 0.4); background: linear-gradient(180deg, #191408 0%, #0d0f17 100%);">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-        <span style="font-size:9.5px; font-weight:900; color:var(--amber);">SUBHARMONIC SYNTHESIZER (GLERR)</span>
-        <button class="btn ${subharmActive ? 'primary' : ''}" id="shToggleBtn" style="padding:4px 10px; font-size:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="font-size:10px; font-weight:900; color:var(--amber);">SUBHARMONIC SYNTHESIZER (GLERR)</span>
+        <button class="btn ${subharmActive ? 'primary' : ''}" id="shToggleBtn" style="padding:4px 10px; font-size:8.5px;">
           ${subharmActive ? 'GLERR AKTIF' : 'BYPASS'}
         </button>
       </div>
-      <p class="hint" style="color:#94a3b8; margin:0 0 8px; font-size:8px;">
-        Membangkitkan sub-bass 30–45 Hz murni dari ketukan 60–90 Hz untuk menambah getaran empuk di dada tanpa distorsi.
-      </p>
-
       <div class="sliderow" style="padding:2px 0;">
         <div class="top">
-          <span style="font-size:8.5px; color:var(--textdim);">Intensitas Sub-Bass Sintesis:</span>
+          <span style="font-size:8.5px; color:var(--textdim);">Intensitas Sub-Bass:</span>
           <span style="font-size:10px; font-weight:800; color:var(--amber);" id="shAmtTxt">${subharmAmount}%</span>
         </div>
         <input type="range" min="0" max="100" step="5" value="${subharmAmount}" id="shAmtSlider" ${subharmActive ? '' : 'disabled'}>
       </div>
-
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; font-size:8px;">
-        <span style="color:var(--textdim);">Frekuensi Deteksi Ketukan:</span>
+        <span style="color:var(--textdim);">Deteksi Sinyal:</span>
         <div style="display:flex; gap:4px;">
-          <button class="btn ${subharmDet===60?'primary':''}" data-shdet="60" style="padding:3px 6px; font-size:7.5px;">60 Hz (Deep)</button>
-          <button class="btn ${subharmDet===80?'primary':''}" data-shdet="80" style="padding:3px 6px; font-size:7.5px;">80 Hz (Standard)</button>
-          <button class="btn ${subharmDet===100?'primary':''}" data-shdet="100" style="padding:3px 6px; font-size:7.5px;">100 Hz (Punch)</button>
+          <button class="btn ${subharmDet===60?'primary':''}" data-shdet="60" style="padding:2px 6px; font-size:7.5px;">60 Hz</button>
+          <button class="btn ${subharmDet===80?'primary':''}" data-shdet="80" style="padding:2px 6px; font-size:7.5px;">80 Hz</button>
+          <button class="btn ${subharmDet===100?'primary':''}" data-shdet="100" style="padding:2px 6px; font-size:7.5px;">100 Hz</button>
         </div>
       </div>
     </div>` : ''}
-
-    <!-- GRAFIK RESPON FREKUENSI CROSSOVER -->
+    
     <div class="panel">
-      <h3>Respon Crossover (${isSub ? 'SUBWOOFER' : 'MAIN SATELLITE'})</h3>
+      <!-- HEADER RESPON DENGAN TOMBOL PINTAS LANGSUNG (ANTI-SCROLL) -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <h3 style="margin:0; font-size:10px;">RESPON CROSSOVER</h3>
+        <div style="display:flex; gap:4px;">
+          <button class="btn ${!isSub ? 'primary' : ''}" id="quickMidHighBtn" style="padding:4px 8px; font-size:8.5px; font-weight:800;">
+            MID-HIGH (OUT 1&2)
+          </button>
+          <button class="btn ${isSub ? 'primary' : ''}" id="quickLowSubBtn" style="padding:4px 8px; font-size:8.5px; font-weight:800;">
+            LOW-SUB (OUT 3&4)
+          </button>
+        </div>
+      </div>
+
       <div class="graphwrap">
         <canvas id="xoverCanvas" width="600" height="210"></canvas>
       </div>
@@ -1793,33 +1781,75 @@ function renderXover(){
       </div>
     </div>
 
-    
-    <!-- FADER KONTROL STRIP -->
-    <div class="panel"><h3>Fader Kontrol — ${OUT_SHORT_NAMES[activeCh]}</h3>
+
+
+    <!-- FADER STRIP DENGAN TOMBOL PRESISI [-] DAN [+] -->
+    <div class="panel">
+      <h3>Fader Kontrol — ${OUT_SHORT_NAMES[activeCh]}</h3>
       <div class="faderstrip">
+        
+        <!-- FADER 1: GAIN -->
         <div class="fadercol">
           <div class="flabel">GAIN</div>
-          <div class="fadertrack"><input type="range" class="vslider" orient="vertical" min="-40" max="6" step="1" value="${gain}" id="gainSlider"></div>
-          <div class="fval" id="gainVal">${gain>0?'+':''}${gain}dB</div>
+          <div class="fadertrack">
+            <input type="range" class="vslider" orient="vertical" min="-40" max="6" step="1" value="${gain}" id="gainSlider">
+          </div>
+          <!-- Tombol Presisi Gain -->
+          <div style="display:flex; align-items:center; justify-content:center; gap:3px; margin-top:6px;">
+            <button class="step-btn" data-step-fader="gain,-1" style="width:20px; height:20px; font-size:12px;">-</button>
+            <div class="fval" id="gainVal" style="margin:0 2px; min-width:42px; text-align:center;">${gain>0?'+':''}${gain}dB</div>
+            <button class="step-btn" data-step-fader="gain,1" style="width:20px; height:20px; font-size:12px;">+</button>
+          </div>
         </div>
+
+        <!-- FADER 2: HPF / SUBSONIC -->
         <div class="fadercol">
           <div class="flabel">${isSub ? 'SUBSONIC' : 'HPF'}</div>
-          <div class="fadertrack"><input type="range" class="vslider" orient="vertical" min="20" max="2000" step="1" value="${hpf}" id="hpfSlider"></div>
-          <div class="fval" id="hpfVal">${hpf}Hz</div>
+          <div class="fadertrack">
+            <input type="range" class="vslider" orient="vertical" min="20" max="2000" step="1" value="${hpf}" id="hpfSlider">
+          </div>
+          <!-- Tombol Presisi HPF -->
+          <div style="display:flex; align-items:center; justify-content:center; gap:3px; margin-top:6px;">
+            <button class="step-btn" data-step-fader="hpf,-5" style="width:20px; height:20px; font-size:12px;">-</button>
+            <div class="fval" id="hpfVal" style="margin:0 2px; min-width:48px; text-align:center;">${hpf}Hz</div>
+            <button class="step-btn" data-step-fader="hpf,5" style="width:20px; height:20px; font-size:12px;">+</button>
+          </div>
         </div>
+
+        <!-- FADER 3: LPF -->
         <div class="fadercol">
           <div class="flabel">LPF</div>
-          <div class="fadertrack"><input type="range" class="vslider" orient="vertical" min="40" max="20000" step="10" value="${lpf}" id="lpfSlider"></div>
-          <div class="fval" id="lpfVal">${lpf>=20000?'THRU':lpf+'Hz'}</div>
+          <div class="fadertrack">
+            <input type="range" class="vslider" orient="vertical" min="40" max="20000" step="10" value="${lpf}" id="lpfSlider">
+          </div>
+          <!-- Tombol Presisi LPF -->
+          <div style="display:flex; align-items:center; justify-content:center; gap:3px; margin-top:6px;">
+            <button class="step-btn" data-step-fader="lpf,-10" style="width:20px; height:20px; font-size:12px;">-</button>
+            <div class="fval" id="lpfVal" style="margin:0 2px; min-width:48px; text-align:center;">${lpf>=20000?'THRU':lpf+'Hz'}</div>
+            <button class="step-btn" data-step-fader="lpf,10" style="width:20px; height:20px; font-size:12px;">+</button>
+          </div>
         </div>
+
       </div>
     </div>`;
-    
 
   bindChSelector(win);
   drawXoverGraph();
 
-  // 1. HANDLER TOMBOL MUTE
+  // 1. TOMBOL PINTAS KARTU: PINDAH KE MID-HIGH ATAU LOW-SUB (ANTI USAP LAYAR)
+  win.querySelector('#quickMidHighBtn').onclick = () => {
+    activeCh = 0; // Pindah langsung ke OUT 1 (High)
+    renderXover();
+    renderOverviewCards();
+  };
+
+  win.querySelector('#quickLowSubBtn').onclick = () => {
+    activeCh = 2; // Pindah langsung ke OUT 3 (Sub)
+    renderXover();
+    renderOverviewCards();
+  };
+
+  // 2. MUTE BUTTON
   win.querySelector('#stripMuteBtn').onclick = () => {
     state.mute[activeCh + 2] = !state.mute[activeCh + 2];
     let mask = 0;
@@ -1829,21 +1859,7 @@ function renderXover(){
     renderOverviewCards();
   };
 
-  // 2. HANDLER SLIDER GAIN OUTPUT
-  const gs = win.querySelector('#gainSlider');
-  gs.oninput = () => {
-    win.querySelector('#gainVal').textContent = (gs.value > 0 ? '+' : '') + gs.value + 'dB';
-    state.gain[activeCh] = +gs.value;
-    sendLive('gain' + activeCh, CMD.SET_GAIN, [activeCh, ...i16le(+gs.value)]);
-    drawXoverGraph();
-  };
-  gs.onchange = () => {
-    state.gain[activeCh] = +gs.value;
-    sendCmd(CMD.SET_GAIN, [activeCh, ...i16le(+gs.value)]);
-    renderOverviewCards();
-  };
-
-  // 3. PENGIRIMAN DATA CROSSOVER (FREKUENSI, TYPE, SLOPE)
+  // 3. FUNGSI KIRIM CROSSOVER
   function sendFullXover(isHpf) {
     const type = +(isHpf ? win.querySelector('#hpfTypeSel').value : win.querySelector('#lpfTypeSel').value);
     const slope = +(isHpf ? win.querySelector('#hpfSlopeSel').value : win.querySelector('#lpfSlopeSel').value);
@@ -1859,7 +1875,20 @@ function renderXover(){
   win.querySelector('#lpfTypeSel').onchange = () => sendFullXover(false);
   win.querySelector('#lpfSlopeSel').onchange = () => sendFullXover(false);
 
-  // 4. HANDLER SLIDER HPF & LPF
+  // 4. HANDLER SLIDER & TOMBOL STEPPING [-] [+]
+  const gs = win.querySelector('#gainSlider');
+  gs.oninput = () => {
+    win.querySelector('#gainVal').textContent = (gs.value > 0 ? '+' : '') + gs.value + 'dB';
+    state.gain[activeCh] = +gs.value;
+    sendLive('gain' + activeCh, CMD.SET_GAIN, [activeCh, ...i16le(+gs.value)]);
+    drawXoverGraph();
+  };
+  gs.onchange = () => {
+    state.gain[activeCh] = +gs.value;
+    sendCmd(CMD.SET_GAIN, [activeCh, ...i16le(+gs.value)]);
+    renderOverviewCards();
+  };
+
   const hs = win.querySelector('#hpfSlider');
   hs.oninput = () => {
     state.xoverHpf[activeCh] = +hs.value;
@@ -1874,36 +1903,62 @@ function renderXover(){
     sendFullXover(false);
   };
 
-  // 5. HANDLER SUBHARMONIC SYNTHESIZER (KHUSUS SUBWOOFER)
-  if (isSub) {
-    function sendSubharmCmd() {
-      // Protokol BLE: CMD_SET_SUBHARM (0x12) [cmd, enabled, amount (0-100), det_freq]
-      sendCmd(0x12, [subharmActive ? 1 : 0, subharmAmount, subharmDet]);
-    }
+  // HANDLER TOMBOL STEPPING [-] [+]
+  win.querySelectorAll('[data-step-fader]').forEach(btn => {
+    btn.onclick = () => {
+      const [target, val] = btn.dataset.stepFader.split(',');
+      const stepVal = parseFloat(val);
 
+      if (target === 'gain') {
+        let v = state.gain[activeCh] + stepVal;
+        v = Math.max(-40, Math.min(6, v));
+        state.gain[activeCh] = v;
+        gs.value = v;
+        win.querySelector('#gainVal').textContent = (v > 0 ? '+' : '') + v + 'dB';
+        sendCmd(CMD.SET_GAIN, [activeCh, ...i16le(v)]);
+        renderOverviewCards();
+      } else if (target === 'hpf') {
+        let v = state.xoverHpf[activeCh] + stepVal;
+        v = Math.max(20, Math.min(2000, v));
+        state.xoverHpf[activeCh] = v;
+        hs.value = v;
+        win.querySelector('#hpfVal').textContent = v + 'Hz';
+        sendFullXover(true);
+      } else if (target === 'lpf') {
+        let v = state.xoverLpf[activeCh] + stepVal;
+        v = Math.max(40, Math.min(20000, v));
+        state.xoverLpf[activeCh] = v;
+        ls.value = v;
+        win.querySelector('#lpfVal').textContent = (v >= 20000 ? 'THRU' : v + 'Hz');
+        sendFullXover(false);
+      }
+      drawXoverGraph();
+    };
+  });
+
+  // 5. HANDLER SUBHARMONIC (JIKA DI CHANNEL SUB)
+  if (isSub) {
     const shBtn = win.querySelector('#shToggleBtn');
     if (shBtn) {
       shBtn.onclick = () => {
         subharmActive = !subharmActive;
-        sendSubharmCmd();
-        toast(subharmActive ? 'Subharmonic Glerr AKTIF!' : 'Subharmonic di-BYPASS');
+        sendCmd(0x12, [subharmActive ? 1 : 0, subharmAmount, subharmDet]);
+        toast(subharmActive ? 'Subharmonic Synthesizer AKTIF!' : 'Subharmonic di-BYPASS');
         renderXover();
       };
     }
-
     const shSl = win.querySelector('#shAmtSlider');
     if (shSl) {
       shSl.oninput = () => {
         subharmAmount = +shSl.value;
         win.querySelector('#shAmtTxt').textContent = subharmAmount + '%';
-        sendSubharmCmd();
+        sendCmd(0x12, [subharmActive ? 1 : 0, subharmAmount, subharmDet]);
       };
     }
-
     win.querySelectorAll('[data-shdet]').forEach(b => {
       b.onclick = () => {
         subharmDet = +b.dataset.shdet;
-        sendSubharmCmd();
+        sendCmd(0x12, [subharmActive ? 1 : 0, subharmAmount, subharmDet]);
         renderXover();
       };
     });
@@ -2982,7 +3037,19 @@ function renderSettings(){
       </div>
       <p class="hint">Status: ${connected ? (authed ? 'Terhubung &amp; Terbuka' : 'Terhubung, TERKUNCI') : 'Mode Simulasi'}${savedPin?' &middot; PIN tersimpan':''}.</p>
     </div>
-
+    
+<!-- TOMBOL LANGSUNG MENUJU README DOKUMENTASI -->
+    <div class="panel" style="border-color: rgba(0, 229, 255, 0.4); margin-top: 14px;">
+      <h3 style="color: var(--cyan); margin-bottom: 6px;">PANDUAN &amp; SKEMA WIRING HARDWARE</h3>
+      <p class="hint" style="color: #94a3b8; margin-bottom: 12px;">
+        Buka buku panduan wiring kabel GPIO, konfigurasi jumper ADC/DAC, dan galeri foto modul.
+      </p>
+      <a href="https://erul46.github.io/EDSP32S3/readme_elkasari_dsp.html" target="_blank" class="btn primary" style="display:flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; padding:11px; font-weight:900; letter-spacing:0.05em;">
+        <i data-lucide="book-open" style="width:15px; height:15px;"></i>
+        <span>BUKA DOKUMENTASI</span>
+      </a>
+    </div>
+    
     <!-- DOKUMENTASI, WIRING SKEMA & LINK CUSTOM -->
     <div class="panel">
       <div style="display:flex; justify-content:space-between; align-items:center;">
