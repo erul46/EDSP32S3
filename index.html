@@ -93,10 +93,10 @@
   .brand-logo-wrap::after {
     content: '';
     position: absolute;
-    top: 30%;
+    top: 10%;
     left: -80%;
     width: 35%;
-    height: 40%;
+    height: 90%;
     background: linear-gradient(
       110deg,
       transparent 20%,
@@ -108,7 +108,7 @@
     transform: skewX(-12deg);
     pointer-events: none;
     z-index: 3;
-    animation: glass-shine 10s ease-in-out infinite;
+    animation: glass-shine 8s ease-in-out infinite;
   }
 
   @keyframes glass-shine {
@@ -658,9 +658,9 @@
   #tabToggleBtn.show { opacity: 1; transform: scale(1) translateY(0); pointer-events: auto; }
 
   #toast {
-    position: fixed; top: 68px; right: 12px; transform: translateX(130%);
-    background: rgba(20, 27, 41, 0.95); backdrop-filter: blur(6px); border: 1px solid var(--cyan);
-    color: var(--cyan); padding: 7px 12px; border-radius: 6px; font-size: 9.5px; font-weight: 700;
+    position: fixed; top: 130px; right: -10px; transform: translateX(130%);
+    background: rgba(20, 27, 41, 0.95); backdrop-filter: blur(6px); border: 1px solid var(--amber);
+    color: var(--amber); padding: 7px 12px; border-radius: 20px; font-size: 9.5px; font-weight: 700;
     transition: transform .25s ease; z-index: 1000; pointer-events: none; max-width: 80%;
   }
   #toast.show { transform: translateX(0); }
